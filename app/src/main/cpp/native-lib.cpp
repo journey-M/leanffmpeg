@@ -218,7 +218,6 @@ Java_gwj_dev_ffmpeg_MainActivity_playVideo(JNIEnv *env, jobject instance, jstrin
     ANativeWindow_Buffer *outBuffer ;
 
 
-    int frame_count = 0;
     int got_picture, ret;
     //6.一帧一帧的读取压缩数据
     while (av_read_frame(pFormateContext, packet) >= 0)
@@ -241,11 +240,11 @@ Java_gwj_dev_ffmpeg_MainActivity_playVideo(JNIEnv *env, jobject instance, jstrin
                 avpicture_fill((AVPicture *) rgb_frame, (const uint8_t *) outBuffer->bits, AV_PIX_FMT_RGBA, pCodecContxt->width, pCodecContxt->height);
 
                 //YUV->RGBA_8888
-                I420ToARGB(yuv_frame->data[0],yuv_frame->linesize[0],
+                libyuv::I420ToARGB(yuv_frame->data[0],yuv_frame->linesize[0],
                            yuv_frame->data[2],yuv_frame->linesize[2],
                            yuv_frame->data[1],yuv_frame->linesize[1],
                            rgb_frame->data[0], rgb_frame->linesize[0],
-                           pCodeCtx->width,pCodeCtx->height);
+                           pCodecContxt->width,pCodecContxt->height);
 
                 ANativeWindow_unlockAndPost(nativeWindow);
                 usleep(1000 * 16);
@@ -261,10 +260,4 @@ Java_gwj_dev_ffmpeg_MainActivity_playVideo(JNIEnv *env, jobject instance, jstrin
     avformat_free_context(pFormateContext);
     env->ReleaseStringUTFChars(input_, input);
 
-
-
-
-
-
-    env->ReleaseStringUTFChars(input_, input);
 }
