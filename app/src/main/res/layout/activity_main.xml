@@ -24,7 +24,7 @@
             app:layout_constraintTop_toTopOf="parent" />
 
 
-        <TextView
+        <Button
             android:id="@+id/sample_change_format"
             android:layout_marginTop="8dp"
             android:layout_width="wrap_content"
@@ -37,7 +37,7 @@
             app:layout_constraintTop_toTopOf="parent" />
 
 
-        <TextView
+        <Button
             android:id="@+id/sample_play"
             android:layout_marginTop="8dp"
             android:layout_width="wrap_content"
@@ -50,8 +50,9 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         
-        <VideoView
-            android:id="@+id/video_view"
+        <SurfaceView
+            android:id="@+id/surface_view"
+            android:layout_marginTop="26dp"
             android:layout_width="match_parent"
             android:layout_height="250dp" />
 

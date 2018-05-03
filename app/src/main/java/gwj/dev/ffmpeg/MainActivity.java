@@ -7,10 +7,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Surface;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.VideoView;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
@@ -38,7 +40,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         System.loadLibrary("swscale");
     }
 
-    private VideoView videoView;
+    private SurfaceView surfaceView;
+    private SurfaceHolder mholder;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,7 +51,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         TextView tv = (TextView) findViewById(R.id.sample_text);
         tv.setText(stringFromJNI());
 
-        videoView = findViewById(R.id.video_view);
+        surfaceView = findViewById(R.id.surface_view);
+        mholder = surfaceView.getHolder();
+        mholder.addCallback(new SurfaceHolder.Callback() {
+            @Override
+            public void surfaceCreated(SurfaceHolder holder) {
+                Log.e("TAG","surfaceCreated");
+                playVideo();
+            }
+
+            @Override
+            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
+            }
+
+            @Override
+            public void surfaceDestroyed(SurfaceHolder holder) {
+
+            }
+        });
         findViewById(R.id.sample_change_format).setOnClickListener(this);
         findViewById(R.id.sample_play).setOnClickListener(this);
         requestPermission();
@@ -66,14 +87,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    String fileName = "VID_20180503_145004.mp4";
+//    String fileName = "VID_20180503_144955.mp4";
 
     @Override
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.sample_play:
-                String inputPath = "/sdcard/DCIM/Camera/VID_20180428_144437.mp4";
-                Surface surface = videoView.getHolder().getSurface();
-                playVideo(inputPath, surface);
+                playVideo();
                 break;
             case R.id.sample_change_format:
                 changeToYuvFormat();
@@ -81,24 +102,30 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    private void playVideo(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String inputPath = "/sdcard/DCIM/Camera/"+fileName;
+                Surface surface = surfaceView.getHolder().getSurface();
+                playVideo(inputPath, surface);
+            }
+        }).start();
+
+    }
+
     /**
      * 转换格式
      */
     private void changeToYuvFormat(){
-        new View.OnClickListener() {
+        new Thread(new Runnable() {
             @Override
-            public void onClick(View v) {
-//                String rootPath = Environment.getExternalStorageDirectory().toString();
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        String inputPath = "/sdcard/DCIM/Camera/VID_20180428_144437.mp4";
-                        String outputPath = "/sdcard/output_n_yuv420p.yuv";
-                        decdoe(inputPath, outputPath);
-                    }
-                }).start();
+            public void run() {
+                String inputPath = "/sdcard/DCIM/Camera/"+fileName;
+                String outputPath = "/sdcard/output_n_yuv420p.yuv";
+                decdoe(inputPath, outputPath);
             }
-        };
+        }).start();
     }
 
 }

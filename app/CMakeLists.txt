@@ -60,6 +60,14 @@ add_library( swscale
 set_target_properties( swscale
                        PROPERTIES IMPORTED_LOCATION
                        ${distribution_DIR}/armeabi/libswscale.so)
+##添加yuv的库
+add_library( yuv
+             SHARED
+             IMPORTED)
+set_target_properties( yuv
+                       PROPERTIES IMPORTED_LOCATION
+                       ${distribution_DIR}/armeabi/libyuv.so)
+
 
 include_directories(libs/include)
 
@@ -93,6 +101,7 @@ target_link_libraries( # Specifies the target library.
                        avutil
                        swresample
                        swscale
+                       yuv
                        # Links the target library to the log library
                        # included in the NDK.
                        ${log-lib}

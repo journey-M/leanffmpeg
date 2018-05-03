@@ -215,17 +215,17 @@ Java_gwj_dev_ffmpeg_MainActivity_playVideo(JNIEnv *env, jobject instance, jstrin
     //缓冲区分配内存
 
     ANativeWindow *nativeWindow = ANativeWindow_fromSurface(env, surface);
-    ANativeWindow_Buffer *outBuffer ;
+    ANativeWindow_Buffer outBuffer ;
 
 
-    int got_picture, ret;
+    int got_picture, len, framCount;
     //6.一帧一帧的读取压缩数据
     while (av_read_frame(pFormateContext, packet) >= 0)
     {
         //是视频的 数据
         if(packet->stream_index == v_stream_idx){
-            ret = avcodec_decode_video2(pCodecContxt,yuv_frame,  &got_picture, packet);
-            if(ret < 0){
+            len = avcodec_decode_video2(pCodecContxt,yuv_frame,  &got_picture, packet);
+            if(len < 0){
                 FFLOGE("%s","解码错误");
                 return;
             }
@@ -233,11 +233,10 @@ Java_gwj_dev_ffmpeg_MainActivity_playVideo(JNIEnv *env, jobject instance, jstrin
             if (got_picture)
             {
                 ANativeWindow_setBuffersGeometry(nativeWindow, pCodecContxt->width, pCodecContxt->height,WINDOW_FORMAT_RGBA_8888);
-                ANativeWindow_lock(nativeWindow, outBuffer, NULL);
-
+                ANativeWindow_lock(nativeWindow, &outBuffer, NULL);
                 //设置rgb_frame的属性（像素格式、宽高）和缓冲区
                 //rgb_frame缓冲区与outBuffer.bits是同一块内存
-                avpicture_fill((AVPicture *) rgb_frame, (const uint8_t *) outBuffer->bits, AV_PIX_FMT_RGBA, pCodecContxt->width, pCodecContxt->height);
+                avpicture_fill((AVPicture *) rgb_frame, (const uint8_t *) outBuffer.bits, AV_PIX_FMT_RGBA, pCodecContxt->width, pCodecContxt->height);
 
                 //YUV->RGBA_8888
                 libyuv::I420ToARGB(yuv_frame->data[0],yuv_frame->linesize[0],
@@ -247,7 +246,8 @@ Java_gwj_dev_ffmpeg_MainActivity_playVideo(JNIEnv *env, jobject instance, jstrin
                            pCodecContxt->width,pCodecContxt->height);
 
                 ANativeWindow_unlockAndPost(nativeWindow);
-                usleep(1000 * 16);
+                FFLOGE("showing  --  one fram  %d", framCount++);
+//                usleep(200);
             }
         }
         av_free_packet(packet);
