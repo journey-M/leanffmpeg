@@ -27,6 +27,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public native void playVideo(String input, Surface surface);
 
+    public native void playAudio(String input, String output);
+
 
     // Used to load the 'native-lib' library on applica0tion startup.
     static {
@@ -57,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
                 Log.e("TAG","surfaceCreated");
-                playVideo();
+//                playVideo();
             }
 
             @Override
@@ -72,6 +74,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
         findViewById(R.id.sample_change_format).setOnClickListener(this);
         findViewById(R.id.sample_play).setOnClickListener(this);
+        findViewById(R.id.sample_play_audio).setOnClickListener(this);
         requestPermission();
 
     }
@@ -98,6 +101,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.sample_change_format:
                 changeToYuvFormat();
+                break;
+            case R.id.sample_play_audio:
+                playAudio();
                 break;
         }
     }
@@ -128,4 +134,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }).start();
     }
 
+
+    /**
+     * 播放音乐
+     */
+    private void playAudio(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String inputPath = "/sdcard/DCIM/Camera/"+fileName;
+                String outputPath = "/sdcard/output_n_audio.pcm";
+                playAudio(inputPath, outputPath);
+            }
+        }).start();
+    }
 }

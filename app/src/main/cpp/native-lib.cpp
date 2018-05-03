@@ -6,11 +6,13 @@
 #include <unistd.h>
 #include "libyuv.h"
 
+#define MAX_AUDIO_FRME_SIZE 48000 * 4
 
 extern "C"{
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
 #include "libswscale/swscale.h"
+#include "libswresample/swresample.h"
 }
 
 extern "C"
@@ -260,4 +262,115 @@ Java_gwj_dev_ffmpeg_MainActivity_playVideo(JNIEnv *env, jobject instance, jstrin
     avformat_free_context(pFormateContext);
     env->ReleaseStringUTFChars(input_, input);
 
+}
+
+//播放音频文件
+extern "C"
+JNIEXPORT void JNICALL
+Java_gwj_dev_ffmpeg_MainActivity_playAudio(JNIEnv *env, jobject instance, jstring input_, jstring output_) {
+    const char *input = env->GetStringUTFChars(input_, 0);
+    const char *output = env->GetStringUTFChars(output_, 0);
+
+
+    // TODO
+    FFLOGE("audio file path  = %s", input);
+    av_register_all();
+    AVFormatContext *pFormatCtx = avformat_alloc_context();
+
+    //打开音频文件
+    if(avformat_open_input(&pFormatCtx,input,NULL,NULL) != 0){
+        FFLOGE("%s","无法打开音频文件");
+        return;
+    }
+    //获取音频流索引位置
+    int i = 0, audio_stream_idx = -1;
+    for(; i < pFormatCtx->nb_streams;i++){
+        if(pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO){
+            audio_stream_idx = i;
+            break;
+        }
+    }
+
+    //获取解码器
+    AVCodecContext *codecCtx = pFormatCtx->streams[audio_stream_idx]->codec;
+    AVCodec *codec = avcodec_find_decoder(codecCtx->codec_id);
+    if(codec == NULL){
+        FFLOGE("%s","无法获取解码器");
+        return;
+    }
+    //打开解码器
+    if(avcodec_open2(codecCtx,codec,NULL) < 0){
+        FFLOGE("%s","无法打开解码器");
+        return;
+    }
+//压缩数据
+    AVPacket *packet = (AVPacket *)av_malloc(sizeof(AVPacket));
+    //解压缩数据
+    AVFrame *frame = av_frame_alloc();
+    //frame->16bit 44100 PCM 统一音频采样格式与采样率
+    SwrContext *swrCtx = swr_alloc();
+
+    //重采样设置参数-------------start
+    //输入的采样格式
+    enum AVSampleFormat in_sample_fmt = codecCtx->sample_fmt;
+    //输出采样格式16bit PCM
+    enum AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
+    //输入采样率
+    int in_sample_rate = codecCtx->sample_rate;
+    //输出采样率
+    int out_sample_rate = 44100;
+    //获取输入的声道布局
+    //根据声道个数获取默认的声道布局（2个声道，默认立体声stereo）
+    //av_get_default_channel_layout(codecCtx->channels);
+    uint64_t in_ch_layout = codecCtx->channel_layout;
+    //输出的声道布局（立体声）
+    uint64_t out_ch_layout = AV_CH_LAYOUT_STEREO;
+
+    swr_alloc_set_opts(swrCtx,
+                       out_ch_layout,out_sample_fmt,out_sample_rate,
+                       in_ch_layout,in_sample_fmt,in_sample_rate,
+                       0, NULL);
+    swr_init(swrCtx);
+
+    //输出的声道个数
+    int out_channel_nb = av_get_channel_layout_nb_channels(out_ch_layout);
+
+    //重采样设置参数-------------end
+    //16bit 44100 PCM 数据
+    uint8_t *out_buffer = (uint8_t *)av_malloc(MAX_AUDIO_FRME_SIZE);
+
+    FILE *fp_pcm = fopen(output,"wb");
+
+    int got_frame = 0,index = 0, ret;
+    //不断读取压缩数据
+    while(av_read_frame(pFormatCtx,packet) >= 0){
+        //解码
+        ret = avcodec_decode_audio4(codecCtx,frame,&got_frame,packet);
+
+        if(ret < 0){
+            FFLOGE("%s","解码完成");
+        }
+        //解码一帧成功
+        if(got_frame > 0){
+            FFLOGE("解码：%d",index++);
+            swr_convert(swrCtx, &out_buffer, MAX_AUDIO_FRME_SIZE, (const uint8_t **) frame->data, frame->nb_samples);
+            //获取sample的size
+            int out_buffer_size = av_samples_get_buffer_size(NULL, out_channel_nb,
+                                                             frame->nb_samples, out_sample_fmt, 1);
+            fwrite(out_buffer,1,out_buffer_size,fp_pcm);
+        }
+
+        av_free_packet(packet);
+    }
+
+    fclose(fp_pcm);
+    av_frame_free(&frame);
+    av_free(out_buffer);
+
+    swr_free(&swrCtx);
+    avcodec_close(codecCtx);
+    avformat_close_input(&pFormatCtx);
+
+
+    env->ReleaseStringUTFChars(input_, input);
 }
