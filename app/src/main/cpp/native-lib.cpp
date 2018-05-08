@@ -3,6 +3,7 @@
 #include "native_log.h"
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
+#include <pthread.h>
 #include <unistd.h>
 #include "libyuv.h"
 
@@ -249,7 +250,7 @@ Java_gwj_dev_ffmpeg_MainActivity_playVideo(JNIEnv *env, jobject instance, jstrin
 
                 ANativeWindow_unlockAndPost(nativeWindow);
                 FFLOGE("showing  --  one fram  %d", framCount++);
-//                usleep(200);
+//                sleep(1);
             }
         }
         av_free_packet(packet);
@@ -374,3 +375,90 @@ Java_gwj_dev_ffmpeg_MainActivity_playAudio(JNIEnv *env, jobject instance, jstrin
 
     env->ReleaseStringUTFChars(input_, input);
 }
+
+
+JavaVM *javaVM;
+
+JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved){
+    javaVM = vm;
+    return JNI_VERSION_1_4;
+
+}
+
+
+
+/**
+ * 在另外的线程中执行
+ * 不同的线程  JNIEVE 对象不一致
+ * @param args
+ * @return
+ */
+void* play_func(void * args){
+
+    FFLOGE("在单独的线程中执行");
+//    JNIEnv* env = NULL;
+//    javaVM->AttachCurrentThread(&env,NULL);
+    int i;
+    for(i=0; i< 4; i++){
+        FFLOGE("在单独的线程中执行 %d",i);
+        sleep(1);
+    }
+
+    for(;;){
+        FFLOGE("这是个 死循环的 c线程 %d",i);
+        i++;
+        sleep(1);
+    }
+
+    pthread_exit((void*)0);
+}
+
+
+void test_forkn(){
+    int nPid = fork();
+
+    FFLOGE("new fork thread =%d", nPid);
+    if (nPid < 0) {
+        FFLOGE("nPid 小于0");
+    } else if (nPid == 0) {
+        FFLOGE("nPid 等于0   子进程id= %d",nPid);
+
+        int i=0;
+        for(;;){
+            FFLOGE("新的进程中执行 循环 %d", i);
+            i++;
+            sleep(1);
+        }
+    } else {
+        FFLOGE("nPid 不等于0  还是在父进程中执行");
+    }
+
+
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_gwj_dev_ffmpeg_MainActivity_playVideoInPosixThread(JNIEnv *env, jobject instance,
+                                                        jstring input_, jobject surface) {
+    const char *input = env->GetStringUTFChars(input_, 0);
+
+//    pthread_t  pid;
+//    pthread_create(&pid,NULL ,play_func,(void*)"NO.1");
+//    FFLOGE("sub thread pid = %d", pid);
+
+
+//    void* rval;
+//    pthread_join(pid, &rval);
+//    pthread_exit(rval);
+
+//    sleep(1);
+//    pthread_exit(&pid);
+
+    //创建一个新的进程执行计数操作
+    test_forkn();
+
+    env->ReleaseStringUTFChars(input_, input);
+}
+
+

@@ -27,6 +27,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public native void playVideo(String input, Surface surface);
 
+    public native void playVideoInPosixThread(String input, Surface surface);
+
     public native void playAudio(String input, String output);
 
 
@@ -74,6 +76,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
         findViewById(R.id.sample_change_format).setOnClickListener(this);
         findViewById(R.id.sample_play).setOnClickListener(this);
+        findViewById(R.id.sample_play_c_thread).setOnClickListener(this);
         findViewById(R.id.sample_play_audio).setOnClickListener(this);
         requestPermission();
 
@@ -90,7 +93,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    String fileName = "VID_20180503_145004.mp4";
+    String fileName = "VID_20180507_171557.mp4";
 //    String fileName = "VID_20180503_144955.mp4";
 
     @Override
@@ -105,6 +108,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.sample_play_audio:
                 playAudio();
                 break;
+            case R.id.sample_play_c_thread:
+                playVideoInCThread();
+                break;
         }
     }
 
@@ -117,7 +123,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 playVideo(inputPath, surface);
             }
         }).start();
+    }
 
+    private void playVideoInCThread(){
+        String inputPath = "/sdcard/DCIM/Camera/"+fileName;
+        Surface surface = surfaceView.getHolder().getSurface();
+        playVideoInPosixThread(inputPath, surface);
     }
 
     /**
