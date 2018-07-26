@@ -410,7 +410,7 @@ void* play_func(void * args){
         sleep(1);
     }
 
-    pthread_exit((void*)0);
+//    pthread_exit((void*)0);
 }
 
 
@@ -436,6 +436,23 @@ void test_forkn(){
 
 }
 
+void * myCplayThread(void * args){
+
+    int num = 0;
+
+    while(true){
+
+        num++;
+        FFLOGE("在子线程中执行");
+        if(num > 3){
+            break;
+        }
+        sleep(2);
+
+    }
+
+    return (void *) 1;
+}
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -456,8 +473,21 @@ Java_gwj_dev_ffmpeg_MainActivity_playVideoInPosixThread(JNIEnv *env, jobject ins
 //    pthread_exit(&pid);
 
     //创建一个新的进程执行计数操作
-    test_forkn();
+//    test_forkn();
 
+    //创建新的线程去播放
+    int ret = 0;
+    pthread_t  pid ;
+    ret = pthread_create(&pid,NULL, myCplayThread,NULL);
+
+    if(ret){
+        FFLOGE("线程创建失败！");
+        return ;
+    }
+
+    pthread_join(pid, NULL);
+
+    FFLOGE("释放之前-----！");
     env->ReleaseStringUTFChars(input_, input);
 }
 

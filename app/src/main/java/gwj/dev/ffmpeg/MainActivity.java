@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    String fileName = "VID_20180507_171557.mp4";
+    String fileName = "VID_20180713_153017.mp4";
 //    String fileName = "VID_20180503_144955.mp4";
 
     @Override

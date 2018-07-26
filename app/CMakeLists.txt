@@ -19,6 +19,19 @@ add_library( # Sets the name of the library.
              # Provides a relative path to your source file(s).
              src/main/cpp/native-lib.cpp )
 
+add_library(
+        push-lib
+        SHARED
+        src/main/cpp/push-lib.cpp
+)
+
+add_library(
+        h264-lib
+        SHARED
+        src/main/cpp/h264-lib.cpp
+)
+
+
 #设置安装的目录
 set(distribution_DIR ../../../../libs)
 
@@ -68,6 +81,13 @@ set_target_properties( yuv
                        PROPERTIES IMPORTED_LOCATION
                        ${distribution_DIR}/armeabi/libyuv.so)
 
+add_library(x264
+        SHARED
+        IMPORTED)
+set_target_properties( x264
+        PROPERTIES IMPORTED_LOCATION
+        ${distribution_DIR}/armeabi/libx264.so)
+
 
 include_directories(libs/include)
 
@@ -99,6 +119,10 @@ find_library( android android)
 
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 
+
+#添加调试信息
+add_definitions("-Wall -g")
+
 target_link_libraries( # Specifies the target library.
                        native-lib
                        avcodec
@@ -112,3 +136,20 @@ target_link_libraries( # Specifies the target library.
                        # included in the NDK.
                        ${log-lib}
                        ${android})
+
+
+target_link_libraries( # Specifies the target library.
+                       push-lib
+                       # Links the target library to the log library
+                       # included in the NDK.
+                       x264
+                       ${log-lib}
+                       ${android})
+
+target_link_libraries( # Specifies the target library.
+        h264-lib
+        # Links the target library to the log library
+        # included in the NDK.
+        x264
+        ${log-lib}
+        ${android})
