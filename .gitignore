@@ -9,3 +9,5 @@
 .idea/
 .externalNativeBuild
 gradle/
+./app/.cxx
+app/.cxx/

@@ -3,8 +3,8 @@
 #include "native_log.h"
 
 extern "C"{
-#include "x264.h"
-#include "x264_config.h"
+#include "x264/x264.h"
+#include "x264/x264_config.h"
 }
 
 #include <string.h>
@@ -12,7 +12,6 @@ extern "C"{
 #include <stdio.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
-#include <x264.h>
 
 #define DATA_MAX 3000000
 #define H264_MTU 1024

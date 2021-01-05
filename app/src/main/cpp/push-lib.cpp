@@ -3,8 +3,8 @@
 #include "native_log.h"
 
 extern "C"{
-#include "x264.h"
-#include "x264_config.h"
+#include "x264/x264.h"
+#include "x264/x264_config.h"
 }
 
 //x264变慢处理器

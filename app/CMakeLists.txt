@@ -42,51 +42,51 @@ add_library( avcodec
              IMPORTED)
 set_target_properties( avcodec
                        PROPERTIES IMPORTED_LOCATION
-                       ${distribution_DIR}/armeabi/libavcodec.so)
+                       ${distribution_DIR}/armeabi-v7a/libavcodec.so)
 add_library( avfilter
              SHARED
              IMPORTED)
 set_target_properties( avfilter
                        PROPERTIES IMPORTED_LOCATION
-                       ${distribution_DIR}/armeabi/libavfilter.so)
+                       ${distribution_DIR}/armeabi-v7a/libavfilter.so)
 add_library( avformat
              SHARED
              IMPORTED)
 set_target_properties( avformat
                        PROPERTIES IMPORTED_LOCATION
-                       ${distribution_DIR}/armeabi/libavformat.so)
+                       ${distribution_DIR}/armeabi-v7a/libavformat.so)
 add_library( avutil
              SHARED
              IMPORTED)
 set_target_properties( avutil
                        PROPERTIES IMPORTED_LOCATION
-                       ${distribution_DIR}/armeabi/libavutil.so)
+                       ${distribution_DIR}/armeabi-v7a/libavutil.so)
 add_library( swresample
              SHARED
              IMPORTED)
 set_target_properties( swresample
                        PROPERTIES IMPORTED_LOCATION
-                       ${distribution_DIR}/armeabi/libswresample.so)
+                       ${distribution_DIR}/armeabi-v7a/libswresample.so)
 add_library( swscale
              SHARED
              IMPORTED)
 set_target_properties( swscale
                        PROPERTIES IMPORTED_LOCATION
-                       ${distribution_DIR}/armeabi/libswscale.so)
+                       ${distribution_DIR}/armeabi-v7a/libswscale.so)
 ##添加yuv的库
 add_library( yuv
              SHARED
              IMPORTED)
 set_target_properties( yuv
                        PROPERTIES IMPORTED_LOCATION
-                       ${distribution_DIR}/armeabi/libyuv.so)
+                       ${distribution_DIR}/armeabi-v7a/libyuv.so)
 
 add_library(x264
         SHARED
         IMPORTED)
 set_target_properties( x264
         PROPERTIES IMPORTED_LOCATION
-        ${distribution_DIR}/armeabi/libx264.so)
+        ${distribution_DIR}/armeabi-v7a/libx264.so)
 
 
 include_directories(libs/include)
