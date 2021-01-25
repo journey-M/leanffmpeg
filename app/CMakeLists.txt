@@ -10,6 +10,8 @@ cmake_minimum_required(VERSION 3.4.1)
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_library( # Sets the name of the library.
              native-lib
 
@@ -33,7 +35,8 @@ add_library(
 
 
 #设置安装的目录
-set(distribution_DIR ../../../../libs)
+set(distribution_DIR ${CMAKE_SOURCE_DIR}/src/main/jniLibs)
+include_directories(${CMAKE_SOURCE_DIR}/src/main/jniLibs/include)
 
 # ffmpeg引用的library
 

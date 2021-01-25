@@ -54,6 +54,21 @@
             android:text="播放音频"
             android:layout_gravity="center" />
 
+        <Button
+          android:id="@+id/sample_push"
+          android:layout_marginTop="8dp"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="推送流"
+          android:layout_gravity="center" />
+
+        <Button
+          android:id="@+id/sample_edit_video"
+          android:layout_marginTop="8dp"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="编辑视频"
+          android:layout_gravity="center" />
 
         <SurfaceView
             android:id="@+id/surface_view"

@@ -1,6 +1,6 @@
 CC = gcc
 FLAGS = -Wall -g
-INCS = -I. -Iinclude
+INCS = -I. -I../jniLibs/include
 LIBS = -L. -Llibs
 
 BUILDDIR=./build/

@@ -1,9 +1,9 @@
 #include <iostream>
 extern "C"{
-#include <libavformat/avformat.h>
-#include <libavutil/avutil.h>
-#include <libavutil/file.h>
-#include <libavutil/mem.h>
+#include "include/libavformat/avformat.h"
+#include "include/libavutil/avutil.h"
+#include "include/libavutil/file.h"
+#include "include/libavutil/avutil.h"
 }
 #include "InputFile.h"
 

@@ -10,12 +10,6 @@ android {
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
-        sourceSets{
-            main{
-                jniLibs.srcDirs = ['libs']
-            }
-        }
-
         externalNativeBuild {
             cmake {
                 cppFlags ""
@@ -23,6 +17,12 @@ android {
             //指定编译的平台
             ndk{
                 abiFilters "armeabi-v7a"
+            }
+            externalNativeBuild{
+                cmake{
+                    arguments "-DANDROID_ARM_NEON=TRUE", "-DCMAKE_BUILD_TYPE=Debug"
+                    cppFlags "-std=c++11"
+                }
             }
         }
     }
