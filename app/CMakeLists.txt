@@ -12,27 +12,6 @@ cmake_minimum_required(VERSION 3.4.1)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_library( # Sets the name of the library.
-             native-lib
-
-             # Sets the library as a shared library.
-             SHARED
-
-             # Provides a relative path to your source file(s).
-             src/main/cpp/native-lib.cpp )
-
-add_library(
-        push-lib
-        SHARED
-        src/main/cpp/push-lib.cpp
-)
-
-add_library(
-        h264-lib
-        SHARED
-        src/main/cpp/h264-lib.cpp
-)
-
 
 #设置安装的目录
 set(distribution_DIR ${CMAKE_SOURCE_DIR}/src/main/jniLibs)
@@ -92,9 +71,6 @@ set_target_properties( x264
         ${distribution_DIR}/armeabi-v7a/libx264.so)
 
 
-include_directories(libs/include)
-
-
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
 # default, you only need to specify the name of the public NDK library
@@ -126,6 +102,15 @@ set(CMAKE_C_VISIBILITY_PRESET hidden)
 #添加调试信息
 add_definitions("-Wall -g")
 
+add_library( # Sets the name of the library.
+        native-lib
+
+        # Sets the library as a shared library.
+        SHARED
+
+        # Provides a relative path to your source file(s).
+        src/main/cpp/jni/native-lib.cpp )
+
 target_link_libraries( # Specifies the target library.
                        native-lib
                        avcodec
@@ -141,6 +126,13 @@ target_link_libraries( # Specifies the target library.
                        ${android})
 
 
+add_library(
+        push-lib
+        SHARED
+        src/main/cpp/jni/push-lib.cpp
+)
+
+
 target_link_libraries( # Specifies the target library.
                        push-lib
                        # Links the target library to the log library
@@ -148,6 +140,12 @@ target_link_libraries( # Specifies the target library.
                        x264
                        ${log-lib}
                        ${android})
+
+add_library(
+        h264-lib
+        SHARED
+        src/main/cpp/jni/h264-lib.cpp
+)
 
 target_link_libraries( # Specifies the target library.
         h264-lib

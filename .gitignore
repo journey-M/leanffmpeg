@@ -12,4 +12,5 @@ gradle/
 ./app/.cxx
 app/.cxx/
 app/src/main/cpp/.clangd
-app/src/main/cpp/build
+app/src/main/cpp/build/
+app/src/main/cpp/unix/build

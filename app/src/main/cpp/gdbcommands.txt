@@ -1,3 +1,0 @@
-file build/a
-set args bb.mp4
-b main.cpp:22
