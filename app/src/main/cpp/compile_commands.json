@@ -1,0 +1,17 @@
+[
+{
+  "directory": "/home/ubuntu/lean/ffsdk/build",
+  "command": "/usr/bin/c++   -I/home/ubuntu/lean/ffsdk/include    -o CMakeFiles/Decoder.dir/Decoder.cpp.o -c /home/ubuntu/lean/ffsdk/Decoder.cpp",
+  "file": "/home/ubuntu/lean/ffsdk/Decoder.cpp"
+},
+{
+  "directory": "/home/ubuntu/lean/ffsdk/build",
+  "command": "/usr/bin/c++   -I/home/ubuntu/lean/ffsdk/include    -o CMakeFiles/a.dir/main.cpp.o -c /home/ubuntu/lean/ffsdk/main.cpp",
+  "file": "/home/ubuntu/lean/ffsdk/main.cpp"
+},
+{
+  "directory": "/home/ubuntu/lean/ffsdk/build",
+  "command": "/usr/bin/c++   -I/home/ubuntu/lean/ffsdk/include    -o CMakeFiles/InputFile.dir/InputFile.cpp.o -c /home/ubuntu/lean/ffsdk/InputFile.cpp",
+  "file": "/home/ubuntu/lean/ffsdk/InputFile.cpp"
+}
+]
