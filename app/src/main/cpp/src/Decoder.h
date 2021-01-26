@@ -5,63 +5,64 @@
 #include <cstdint>
 #include <vector>
 
-extern "C"{
+extern "C" {
 #include <libyuv.h>
 #include <libavcodec/avcodec.h>
+#ifdef unix
 #include <jpeglib.h>
-
+#endif
 }
 
 using namespace std;
 
-class Options{
-	public:
-	long start;
-	int per;
-	private:
+class Options {
+public:
+    long start;
+    int per;
+private:
 };
 
-struct FrameImage{
-	int width;
-	int height;
-	char *buffer;
+struct FrameImage {
+    int width;
+    int height;
+    char *buffer;
 };
 
 
-class Decoder{
+class Decoder {
 
-	public :
-		InputFile* mInputFile;
-		//add for test
-		int videoStreamIndex = -1;
-		AVStream *videoStream = NULL;
-		int audioStreamIndex = -1;
-		AVStream *audioStream = NULL;
+public :
+    InputFile *mInputFile;
+    //add for test
+    int videoStreamIndex = -1;
+    AVStream *videoStream = NULL;
+    int audioStreamIndex = -1;
+    AVStream *audioStream = NULL;
 
-		AVCodec *videoCodec;
-		AVCodec *audioCodec;
-		AVCodecContext* vCodecCtx;
-		AVCodecContext* aCodecCtx;
+    AVCodec *videoCodec;
+    AVCodec *audioCodec;
+    AVCodecContext *vCodecCtx;
+    AVCodecContext *aCodecCtx;
 
-		Decoder(InputFile *inputFile);	
+    Decoder(InputFile *inputFile);
 
-		int getVideoImages(Options* option,vector<FrameImage*> *result);
+    int getVideoImages(Options *option, vector<FrameImage *> *result, int maxcount);
 
-	private:
+private:
 
-		void decodeVideo(InputFile *inputFile);
+    void decodeVideo(InputFile *inputFile);
 
-		void decodeAudio(InputFile *inputFile);
-		
-		int rgb2jpg(char *jpg_file, char *pdata, int width, int height);
+    void decodeAudio(InputFile *inputFile);
 
-		FrameImage* decodeOneFrame(int64_t seekPos,AVPacket* avPacket);
+    int rgb2jpg(char *jpg_file, char *pdata, int width, int height);
 
-		int findVideoStream();
-		
-		int findAudioStream();
+    FrameImage *decodeOneFrame(int64_t seekPos);
 
-		int initVideoDecoder();
+    int findVideoStream();
+
+    int findAudioStream();
+
+    int initVideoDecoder();
 
 };
 

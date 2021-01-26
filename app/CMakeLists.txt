@@ -85,6 +85,7 @@ find_library( # Sets the name of the path variable.
               log )
 find_library( android android)
 
+find_library( jnigraphics jnigraphics)
 
 
 
@@ -152,5 +153,29 @@ target_link_libraries( # Specifies the target library.
         # Links the target library to the log library
         # included in the NDK.
         x264
+        ${log-lib}
+        ${android})
+
+add_library(
+        videoEdit-lib
+        SHARED
+        src/main/cpp/jni/videoEdit-lib.cpp
+        src/main/cpp/src/Decoder.cpp
+        src/main/cpp/src/InputFile.cpp
+)
+
+target_link_libraries( # Specifies the target library.
+        videoEdit-lib
+        # Links the target library to the log library
+        # included in the NDK.
+        jnigraphics
+        x264
+        avcodec
+        avfilter
+        avformat
+        avutil
+        swresample
+        swscale
+        yuv
         ${log-lib}
         ${android})

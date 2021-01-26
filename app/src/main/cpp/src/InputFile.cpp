@@ -24,7 +24,7 @@ static int read_packet(void *opaque, uint8_t *buf, int buf_size)
     return buf_size;
 }
 
-void InputFile::openInputFile(char* path){
+void InputFile::openInputFile(const char* path){
 
 	input_filename = path;
 

@@ -18,13 +18,13 @@ class InputFile{
 		uint8_t *buffer = NULL;
 		void *avio_ctx_buffer = NULL;
 		size_t buffer_size, avio_ctx_buffer_size = 4096;
-		char *input_filename = NULL;
+		const char *input_filename = NULL;
 		int ret = 0;
 		struct buffer_data bd = { 0 };
 
 
 
-		void openInputFile(char* path);
+		void openInputFile(const char* path);
 
 
 		void clearInpute();

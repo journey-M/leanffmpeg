@@ -79,13 +79,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     findViewById(R.id.sample_play_audio).setOnClickListener(this);
     findViewById(R.id.sample_push).setOnClickListener(this);
     findViewById(R.id.sample_edit_video).setOnClickListener(this);
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
     requestPermission();
+
   }
 
   @TargetApi(Build.VERSION_CODES.M)
   private void requestPermission() {
+
     if (ContextCompat.checkSelfPermission(this,
-        Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        Manifest.permission.READ_EXTERNAL_STORAGE)
         != PackageManager.PERMISSION_GRANTED) {
       requestPermissions(new String[] {
           Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -94,8 +101,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
   }
 
-  String fileName = "VID_20180713_153017.mp4";
-  //    String fileName = "VID_20180503_144955.mp4";
 
   @Override
   public void onClick(View v) {
@@ -121,11 +126,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
   }
 
+  String fileName = "sdcard/cc.mp4";
   private void playVideo() {
     new Thread(new Runnable() {
       @Override
       public void run() {
-        String inputPath = "/sdcard/DCIM/Camera/" + fileName;
+        String inputPath = fileName ;
         Surface surface = surfaceView.getHolder().getSurface();
         playVideo(inputPath, surface);
       }
@@ -133,7 +139,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
   }
 
   private void playVideoInCThread() {
-    String inputPath = "/sdcard/DCIM/Camera/" + fileName;
+    String inputPath = fileName;
     Surface surface = surfaceView.getHolder().getSurface();
     playVideoInPosixThread(inputPath, surface);
   }
@@ -145,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     new Thread(new Runnable() {
       @Override
       public void run() {
-        String inputPath = "/sdcard/DCIM/Camera/" + fileName;
+        String inputPath =fileName;
         String outputPath = "/sdcard/output_n_yuv420p.yuv";
         decdoe(inputPath, outputPath);
       }
@@ -159,7 +165,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     new Thread(new Runnable() {
       @Override
       public void run() {
-        String inputPath = "/sdcard/DCIM/Camera/" + fileName;
+        String inputPath =  fileName;
         String outputPath = "/sdcard/output_n_audio.pcm";
         playAudio(inputPath, outputPath);
       }

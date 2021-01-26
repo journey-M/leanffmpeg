@@ -1,6 +1,6 @@
 CC = gcc
 FLAGS = -Wall -g
-INCS = -I. -I../../jniLibs/include
+INCS = -I. -I../../jniLibs/include -I../src
 LIBS = -L. -Llibs
 
 BUILDDIR=./build
@@ -12,7 +12,7 @@ OBJS_ORIGIN += $(subst .c,.o, $(SRCFILES_C))
 OBJS += $(subst $(SRCDIR), $(BUILDDIR)/, $(OBJS_ORIGIN))
 
 
-all : preper a
+all : preper $(BUILDDIR)/a
 	@echo success
 
 print:
@@ -23,9 +23,11 @@ print:
 preper: 
 	$(shell if [ ! -d build ]; then mkdir build ; fi;)
 
-a: $(OBJS)
-	echo $(LD_LIBRARY_PATH)
+$(BUILDDIR)/a: $(BUILDDIR)/main.o $(OBJS)
 	$(CC) $(FLAGS) $(INCS) $(LIBS) -o $@ $^ -ljpeg -lavformat -lavcodec -lswscale -lswresample -lavutil -lstdc++ -lm -lz -lpthread -lyuv
+
+$(BUILDDIR)/main.o : main.cpp
+	$(CC) $(FLAGS) $(INCS) -o $@ -c $^
 
 $(BUILDDIR)/%.o:$(SRCDIR)%.cpp
 	$(CC) $(FLAGS) $(INCS) -o $@ -c $^

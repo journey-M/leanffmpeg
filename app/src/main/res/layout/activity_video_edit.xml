@@ -4,17 +4,43 @@
   xmlns:tools="http://schemas.android.com/tools"
   android:layout_width="match_parent"
   android:layout_height="match_parent"
+  android:background="#aaaaaa"
+  android:orientation="vertical"
   tools:context="gwj.dev.ffmpeg.MainActivity">
 
+  <Button
+    android:id="@+id/open"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="打开" />
+
+  <HorizontalScrollView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+      android:id="@+id/video_edit_container"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:layout_marginTop="16dp"
+      android:orientation="horizontal"></LinearLayout>
+
+  </HorizontalScrollView>
+
+
   <LinearLayout
-    android:id="@+id/video_edit_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginTop="16dp"
-    android:orientation="horizontal">
+    android:layout_marginTop="80dp"
+    android:orientation="vertical">
+    <gwj.dev.ffmpeg.videoEdit.VContainer
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content">
 
+    </gwj.dev.ffmpeg.videoEdit.VContainer>
 
   </LinearLayout>
 
-
 </LinearLayout>
+
+
