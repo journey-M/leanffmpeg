@@ -56,7 +56,7 @@ private:
 
     int rgb2jpg(char *jpg_file, char *pdata, int width, int height);
 
-    FrameImage *decodeOneFrame(int64_t seekPos);
+    FrameImage *decodeOneFrame(int start);
 
     int findVideoStream();
 

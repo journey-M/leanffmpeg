@@ -35,6 +35,7 @@ android {
         pickFirst 'lib/armeabi-v7a/libavfilter.so'
         pickFirst 'lib/armeabi-v7a/libx264.so'
         pickFirst 'lib/armeabi-v7a/libavformat.so'
+        pickFirst 'lib/armeabi-v7a/libavdevice.so'
     }
 
     buildTypes {

@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -14,6 +15,8 @@ import android.view.View;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import java.io.File;
+import gwj.dev.ffmpeg.ffmpegCmd.FFmpegCmd;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -79,13 +82,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     findViewById(R.id.sample_play_audio).setOnClickListener(this);
     findViewById(R.id.sample_push).setOnClickListener(this);
     findViewById(R.id.sample_edit_video).setOnClickListener(this);
+    findViewById(R.id.sample_cut_video).setOnClickListener(this);
   }
 
   @Override
   protected void onResume() {
     super.onResume();
     requestPermission();
-
   }
 
   @TargetApi(Build.VERSION_CODES.M)
@@ -100,7 +103,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
       }, 1);
     }
   }
-
 
   @Override
   public void onClick(View v) {
@@ -123,15 +125,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
       case R.id.sample_edit_video:
         gotoVideoEdit();
         break;
+      case R.id.sample_cut_video:
+        ffmpegTest();
+        break;
     }
   }
 
   String fileName = "sdcard/cc.mp4";
+
   private void playVideo() {
     new Thread(new Runnable() {
       @Override
       public void run() {
-        String inputPath = fileName ;
+        String inputPath = fileName;
         Surface surface = surfaceView.getHolder().getSurface();
         playVideo(inputPath, surface);
       }
@@ -151,7 +157,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     new Thread(new Runnable() {
       @Override
       public void run() {
-        String inputPath =fileName;
+        String inputPath = fileName;
         String outputPath = "/sdcard/output_n_yuv420p.yuv";
         decdoe(inputPath, outputPath);
       }
@@ -165,11 +171,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     new Thread(new Runnable() {
       @Override
       public void run() {
-        String inputPath =  fileName;
+        String inputPath = fileName;
         String outputPath = "/sdcard/output_n_audio.pcm";
         playAudio(inputPath, outputPath);
       }
     }).start();
+  }
+
+  private void ffmpegTest() {
+    new Thread() {
+      @Override
+      public void run() {
+        long startTime = System.currentTimeMillis();
+        String input = "/sdcard/a.mp3";
+        String output = "/sdcard/aoutput.mp3";
+
+        //String cmd = "ffmpeg -y -i %s -vn -acodec copy -ss %s -t %s %s";
+        //String result = String.format(cmd, input, "00:00:10", "00:00:20", output);
+
+        String result = "ffmpeg -ss 4 -i /sdcard/cc.mp4 -f image2 -r 1 -t 1 -s 256x256 /sdcard/a.png";
+        FFmpegCmd.runCmd(result.split(" "));
+        Log.d("FFmpegTest", "run: 耗时：" + (System.currentTimeMillis() - startTime));
+      }
+    }.start();
   }
 
   private void pushVideoStream() {

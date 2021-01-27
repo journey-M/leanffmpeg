@@ -41,18 +41,18 @@ public class VideoEditActivity extends AppCompatActivity implements View.OnClick
     //videoAPI.openVideoFile("/sdcard/bb.mp4");
     videoAPI.openVideoFile("/sdcard/cc.mp4");
     //videoAPI.openVideoFile("/sdcard/a.mp4");
-    File fTest = new File("/sdcard/a.tt.txt");
-    if (!fTest.exists()) {
-      try {
-        fTest.createNewFile();
-        FileOutputStream fos = new FileOutputStream(fTest);
-        String content = "test nnnnnn";
-        fos.write(content.getBytes());
-        fos.close();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }
+    //File fTest = new File("/sdcard/a.tt.txt");
+    //if (!fTest.exists()) {
+    //  try {
+    //    fTest.createNewFile();
+    //    FileOutputStream fos = new FileOutputStream(fTest);
+    //    String content = "test nnnnnn";
+    //    fos.write(content.getBytes());
+    //    fos.close();
+    //  } catch (IOException e) {
+    //    e.printStackTrace();
+    //  }
+    //}
   }
 
   private final String TAG = "VEDIT";
@@ -60,7 +60,7 @@ public class VideoEditActivity extends AppCompatActivity implements View.OnClick
   @Override
   public void onClick(View v) {
     Log.e(TAG, "before =" + System.currentTimeMillis());
-    ArrayList<Bitmap> bitmaps = videoAPI.getVideoPreviews(1, 2, 20);
+    ArrayList<Bitmap> bitmaps = videoAPI.getVideoPreviews(0, 1, 20);
     Log.e(TAG, "after  =" + System.currentTimeMillis());
     if (bitmaps != null && bitmaps.size() > 0) {
       for (int i = 0; i < bitmaps.size(); i++) {

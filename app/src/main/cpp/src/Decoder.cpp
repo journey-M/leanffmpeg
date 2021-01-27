@@ -20,28 +20,31 @@ int Decoder::getVideoImages(Options *opt, vector<FrameImage *> *result, int max)
     //如果有视频流
 
     if (videoStream) {
-        AVRational time_base = videoStream->time_base;
         int start = opt->start;
         for (int i = 0; i < max; i++) {
-            int64_t seekPos = start / av_q2d(time_base);
-            FrameImage *tmp = decodeOneFrame(seekPos);
+            FrameImage *tmp = decodeOneFrame(start);
             if (tmp) {
                 result->push_back(tmp);
             }
-            start = start + 2;
+            start = start + opt->per;
         }
     }
     return result->size();
 }
 
-FrameImage *Decoder::decodeOneFrame(int64_t seekPos) {
+FrameImage *Decoder::decodeOneFrame(int start) {
 
     FrameImage *tmp = NULL;
     static AVPacket avPacket;
 
     bool gotFrame = false;
-    int ret = av_seek_frame(mInputFile->fmt_ctx, videoStreamIndex,
-                            seekPos, AVSEEK_FLAG_FRAME);
+    int ret = -1;
+    AVRational time_base = videoStream->time_base;
+    int64_t seekPos = start / av_q2d(time_base);
+//    ret = av_seek_frame(mInputFile->fmt_ctx, videoStreamIndex,seekPos, AVSEEK_FLAG_FRAME);
+
+    ret = avformat_seek_file(mInputFile->fmt_ctx, videoStreamIndex, INT64_MIN, seekPos, seekPos,0);
+
     if (ret < 0) {
         fprintf(stderr, "av_seek_frame  faile \n");
         return tmp;
