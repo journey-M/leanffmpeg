@@ -33,6 +33,8 @@
 
         <activity android:name=".VideoEditActivity">
         </activity>
+        <activity android:name=".glplayer.PlayInOpenGlActivity">
+        </activity>
 
 
     </application>

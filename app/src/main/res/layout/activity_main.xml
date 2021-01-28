@@ -28,6 +28,13 @@
             android:text="转换为YUV格式"
             android:layout_gravity="center" />
 
+        <Button
+          android:id="@+id/sample_play_ingles"
+          android:layout_marginTop="8dp"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="gles播放"
+          android:layout_gravity="center" />
 
         <Button
             android:id="@+id/sample_play"

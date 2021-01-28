@@ -6,16 +6,13 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.Surface;
-import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-import java.io.File;
+import gwj.dev.ffmpeg.glplayer.PlayInOpenGlActivity;
 import gwj.dev.ffmpeg.ffmpegCmd.FFmpegCmd;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -47,35 +44,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
   }
 
   private SurfaceView surfaceView;
-  private SurfaceHolder mholder;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
-    // Example of a call to a native method
-    TextView tv = (TextView) findViewById(R.id.sample_text);
-
     surfaceView = findViewById(R.id.surface_view);
-    mholder = surfaceView.getHolder();
-    mholder.addCallback(new SurfaceHolder.Callback() {
-      @Override
-      public void surfaceCreated(SurfaceHolder holder) {
-        Log.e("TAG", "surfaceCreated");
-        //                playVideo();
-      }
-
-      @Override
-      public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
-      }
-
-      @Override
-      public void surfaceDestroyed(SurfaceHolder holder) {
-
-      }
-    });
     findViewById(R.id.sample_change_format).setOnClickListener(this);
     findViewById(R.id.sample_play).setOnClickListener(this);
     findViewById(R.id.sample_play_c_thread).setOnClickListener(this);
@@ -83,6 +58,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     findViewById(R.id.sample_push).setOnClickListener(this);
     findViewById(R.id.sample_edit_video).setOnClickListener(this);
     findViewById(R.id.sample_cut_video).setOnClickListener(this);
+    findViewById(R.id.sample_play_ingles).setOnClickListener(this);
   }
 
   @Override
@@ -107,6 +83,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
   @Override
   public void onClick(View v) {
     switch (v.getId()) {
+      case R.id.sample_play_ingles:
+        playInGles();
+        break;
       case R.id.sample_play:
         playVideo();
         break;
@@ -129,6 +108,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ffmpegTest();
         break;
     }
+  }
+
+  private void playInGles() {
+    Intent intent = new Intent(this, PlayInOpenGlActivity.class);
+    startActivity(intent);
   }
 
   String fileName = "sdcard/cc.mp4";
@@ -189,7 +173,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //String cmd = "ffmpeg -y -i %s -vn -acodec copy -ss %s -t %s %s";
         //String result = String.format(cmd, input, "00:00:10", "00:00:20", output);
 
-        String result = "ffmpeg -ss 4 -i /sdcard/cc.mp4 -f image2 -r 1 -t 1 -s 256x256 /sdcard/a.png";
+        String result =
+            "ffmpeg -ss 4 -i /sdcard/cc.mp4 -f image2 -r 1 -t 1 -s 256x256 /sdcard/a.png";
         FFmpegCmd.runCmd(result.split(" "));
         Log.d("FFmpegTest", "run: 耗时：" + (System.currentTimeMillis() - startTime));
       }

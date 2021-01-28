@@ -235,22 +235,65 @@ Java_gwj_dev_ffmpeg_MainActivity_playVideo(JNIEnv *env, jobject instance, jstrin
             //为0说明解码完成，非0正在解码
             if (got_picture)
             {
-                ANativeWindow_setBuffersGeometry(nativeWindow, pCodecContxt->width, pCodecContxt->height,WINDOW_FORMAT_RGBA_8888);
+//                ANativeWindow_setBuffersGeometry(nativeWindow, pCodecContxt->width, pCodecContxt->height,WINDOW_FORMAT_RGBA_8888);
+//                ANativeWindow_lock(nativeWindow, &outBuffer, NULL);
+//                //设置rgb_frame的属性（像素格式、宽高）和缓冲区
+//                //rgb_frame缓冲区与outBuffer.bits是同一块内存
+//                avpicture_fill((AVPicture *) rgb_frame, (const uint8_t *) outBuffer.bits, AV_PIX_FMT_RGBA, pCodecContxt->width, pCodecContxt->height);
+//
+//                //YUV->RGBA_8888
+//                libyuv::I420ToARGB(yuv_frame->data[0],yuv_frame->linesize[0],
+//                           yuv_frame->data[2],yuv_frame->linesize[2],
+//                           yuv_frame->data[1],yuv_frame->linesize[1],
+//                           rgb_frame->data[0], rgb_frame->linesize[0],
+//                           pCodecContxt->width,pCodecContxt->height);
+//
+//                ANativeWindow_unlockAndPost(nativeWindow);
+//                FFLOGE("showing  --  one fram  %d", framCount++);
+//                sleep(1);
+
+
+                    //first scale the video  width
+                int dest_width = yuv_frame->width /4;
+                int dest_height = yuv_frame->height /4;
+//                float radio =  (float)yuv_frame->width /dest_width;
+//                int dest_height = (float )yuv_frame->height / radio;
+//                FFLOGE(" %d, %d  after  radio %f: width : %d , %d \n", yuv_frame->width, yuv_frame->height,radio,  dest_width, dest_height);
+
+//                int dest_width = yuv_frame->width;
+//                int dest_height = yuv_frame->height;
+
+
+                int dest_len = dest_width * dest_height * 3 / 2;
+                uint8_t *destData = new uint8_t[dest_len];
+                uint8_t *destU = destData + dest_width * dest_height;
+                uint8_t *destV = destData + dest_width * dest_height * 5 / 4;
+
+
+                libyuv::I420Scale(
+                        yuv_frame->data[0], yuv_frame->width, yuv_frame->data[2],
+                        yuv_frame->width / 2, yuv_frame->data[1], yuv_frame->width / 2,
+                        yuv_frame->width, yuv_frame->height,
+                        destData, dest_width, destU,
+                        dest_width / 2, destV, dest_width / 2, dest_width, dest_height,
+                        libyuv::kFilterNone);
+
+
+                ANativeWindow_setBuffersGeometry(nativeWindow, dest_width, dest_height,WINDOW_FORMAT_RGBA_8888);
                 ANativeWindow_lock(nativeWindow, &outBuffer, NULL);
                 //设置rgb_frame的属性（像素格式、宽高）和缓冲区
                 //rgb_frame缓冲区与outBuffer.bits是同一块内存
-                avpicture_fill((AVPicture *) rgb_frame, (const uint8_t *) outBuffer.bits, AV_PIX_FMT_RGBA, pCodecContxt->width, pCodecContxt->height);
+                avpicture_fill((AVPicture *) rgb_frame, (const uint8_t *) outBuffer.bits, AV_PIX_FMT_RGBA, dest_width, dest_height);
 
-                //YUV->RGBA_8888
-                libyuv::I420ToARGB(yuv_frame->data[0],yuv_frame->linesize[0],
-                           yuv_frame->data[2],yuv_frame->linesize[2],
-                           yuv_frame->data[1],yuv_frame->linesize[1],
+                //conver yuv to RGBA_8888 and show
+                libyuv::I420ToARGB(destData,dest_width,
+                                   destU,dest_width/2,
+                                   destV,dest_width/2,
                            rgb_frame->data[0], rgb_frame->linesize[0],
-                           pCodecContxt->width,pCodecContxt->height);
+                           dest_width,dest_height);
 
                 ANativeWindow_unlockAndPost(nativeWindow);
-                FFLOGE("showing  --  one fram  %d", framCount++);
-//                sleep(1);
+
             }
         }
         av_free_packet(packet);

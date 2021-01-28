@@ -212,3 +212,33 @@ target_link_libraries( # Specifies the target library.
         yuv
         ${log-lib}
         ${android})
+
+
+add_library(
+        vglplayer
+        SHARED
+        src/main/cpp/jni/glplayer/surface.cpp
+        src/main/cpp/jni/glplayer/player.cpp
+        src/main/cpp/jni/glplayer/util.cpp
+        src/main/cpp/jni/glplayer/vdecode.cpp
+        src/main/cpp/jni/glplayer/shader.cpp
+)
+
+target_link_libraries( # Specifies the target library.
+        vglplayer
+        # Links the target library to the log library
+        # included in the NDK.
+#        gl
+        jnigraphics
+        x264
+        avcodec
+        avfilter
+        avformat
+        avutil
+        swresample
+        swscale
+        yuv
+        EGL
+        GLESv2
+        ${log-lib}
+        ${android})
