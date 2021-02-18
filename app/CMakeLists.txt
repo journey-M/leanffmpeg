@@ -14,6 +14,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 #SET(ASM_OPTIONS "-x assembler-with-cpp")
 #SET(CMAKE_ASM_FLAGS "${CFLAGS} ${ASM_OPTIONS}" )
 
+add_definitions(-Dandroid)
+
 
 #设置安装的目录
 set(distribution_DIR ${CMAKE_SOURCE_DIR}/src/main/jniLibs)
@@ -195,6 +197,7 @@ add_library(
         src/main/cpp/jni/videoEdit-lib.cpp
         src/main/cpp/src/Decoder.cpp
         src/main/cpp/src/InputFile.cpp
+        src/main/cpp/src/Player.cpp
 )
 
 target_link_libraries( # Specifies the target library.

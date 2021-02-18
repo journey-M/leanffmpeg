@@ -28,7 +28,6 @@ struct FrameImage {
     char *buffer;
 };
 
-
 class Decoder {
 
 public :
@@ -47,16 +46,14 @@ public :
     Decoder(InputFile *inputFile);
 
     int getVideoImages(Options *option, vector<FrameImage *> *result, int maxcount);
+    FrameImage *decodeOneFrame(int start, int cut);
+
 
 private:
 
-    void decodeVideo(InputFile *inputFile);
-
-    void decodeAudio(InputFile *inputFile);
 
     int rgb2jpg(char *jpg_file, char *pdata, int width, int height);
 
-    FrameImage *decodeOneFrame(int start);
 
     int findVideoStream();
 

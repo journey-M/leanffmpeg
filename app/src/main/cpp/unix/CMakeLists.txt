@@ -11,6 +11,6 @@ message("include folder : "${CMAKE_SOURCE_DIR}/include)
 
 # add_library(yuv STATIC yuv)
 add_library(InputFile ../src/InputFile.cpp)
-add_library(Decoder ../src/Decoder.cpp)
+add_library(Decoder ../src/Decoder.cpp ../src/Player.cpp)
 add_executable(a main.cpp)
-target_link_libraries(a PUBLIC InputFile Decoder jpeg avcodec avutil avformat avfilter swresample swscale yuv )
+target_link_libraries(a PUBLIC InputFile Decoder jpeg avcodec avutil avformat avfilter swresample swscale yuv pthread )

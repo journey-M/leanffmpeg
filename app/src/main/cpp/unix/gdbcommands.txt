@@ -1,4 +1,6 @@
-file a
-set args ../bb.mp4
-b main.cpp:22
+file build/a
+set args ~/VID_20191005_150211.mp4
+b main.cpp:53
+b main.cpp:82
 b Decode.cpp:43
+r

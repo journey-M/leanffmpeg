@@ -9,10 +9,9 @@
 Decoder::Decoder(InputFile *input) {
     mInputFile = input;
 
-    //TODO
     findAudioStream();
-
     findVideoStream();
+
     initVideoDecoder();
 }
 
@@ -22,7 +21,7 @@ int Decoder::getVideoImages(Options *opt, vector<FrameImage *> *result, int max)
     if (videoStream) {
         int start = opt->start;
         for (int i = 0; i < max; i++) {
-            FrameImage *tmp = decodeOneFrame(start);
+            FrameImage *tmp = decodeOneFrame(start, 10);
             if (tmp) {
                 result->push_back(tmp);
             }
@@ -32,18 +31,24 @@ int Decoder::getVideoImages(Options *opt, vector<FrameImage *> *result, int max)
     return result->size();
 }
 
-FrameImage *Decoder::decodeOneFrame(int start) {
+FrameImage *Decoder::decodeOneFrame(int start, int cut) {
 
     FrameImage *tmp = NULL;
-    static AVPacket avPacket;
+    AVPacket avPacket;
 
     bool gotFrame = false;
     int ret = -1;
     AVRational time_base = videoStream->time_base;
     int64_t seekPos = start / av_q2d(time_base);
-//    ret = av_seek_frame(mInputFile->fmt_ctx, videoStreamIndex,seekPos, AVSEEK_FLAG_FRAME);
 
-    ret = avformat_seek_file(mInputFile->fmt_ctx, videoStreamIndex, INT64_MIN, seekPos, seekPos,0);
+    ret = avformat_seek_file(mInputFile->fmt_ctx, videoStreamIndex, INT64_MIN, seekPos, seekPos,
+            AVSEEK_FLAG_BACKWARD|AVSEEK_FLAG_FRAME);
+    if(ret < 0){
+        ret = avformat_seek_file(mInputFile->fmt_ctx, videoStreamIndex, INT64_MIN, seekPos, seekPos, 0);
+    }
+
+
+    avcodec_flush_buffers(vCodecCtx);
 
     if (ret < 0) {
         fprintf(stderr, "av_seek_frame  faile \n");
@@ -52,10 +57,14 @@ FrameImage *Decoder::decodeOneFrame(int start) {
 
     while (!gotFrame) {
         ret = av_read_frame(mInputFile->fmt_ctx, &avPacket);
-        if (ret < 0) {
+        if(AVERROR(ret) == AVERROR_EOF){
             fprintf(stderr, "av read frame faile %d \n", AVERROR(ret));
             break;
+        }else if (ret < 0) {
+            fprintf(stderr, "av read frame faile %d \n", AVERROR(ret));
+           break;
         }
+
         if (avPacket.stream_index != videoStreamIndex) {
             continue;
         }
@@ -77,19 +86,13 @@ FrameImage *Decoder::decodeOneFrame(int start) {
                     avframe->linesize[0], avframe->linesize[1],
                     avframe->linesize[2], avframe->linesize[3]);
 
-            // int destSize = avframe->width * avframe->height *3;
-            // char* tmpData = new char[destSize];
+            int dest_width = avframe->width / cut;
+            int dest_height = avframe->height / cut;
+            char *tmpData;
 
-            // libyuv::I420ToRGB24(avframe->data[0], avframe->linesize[0],
-            // 		avframe->data[1], avframe->linesize[1],
-            // 		avframe->data[2], avframe->linesize[2],
-            // 		(uint8_t *) tmpData, avframe->width * 3,
-            // 		avframe->width, avframe->height);
-            // rgb2jpg((char*)"./test.jpg",tmpData, avframe->width,
-            // avframe->height);
+#ifdef android
 
-            int dest_width = avframe->width / 10;
-            int dest_height = avframe->height / 10;
+            //unix use RGB565  格式
             int dest_len = dest_width * dest_height * 3 / 2;
             // int dst_u_size = dest_width /2* dest_height /2;
 
@@ -106,13 +109,38 @@ FrameImage *Decoder::decodeOneFrame(int start) {
                     libyuv::kFilterNone);
 
             int destSize = dest_width * dest_height * 3;
-            char *tmpData = new char[destSize];
+            tmpData = new char[destSize];
 
             libyuv::I420ToRGB24(destData, dest_width, destU, dest_width / 2,
                                 destV, dest_width / 2, (uint8_t *) tmpData,
                                 dest_width * 3, dest_width, dest_height);
 
+#endif
+
+
 #ifdef unix
+            //unix use RGBA 格式
+            int dest_len = dest_width * dest_height * 3 / 2;
+            // int dst_u_size = dest_width /2* dest_height /2;
+
+            uint8_t *destData = new uint8_t[dest_len];
+            uint8_t *destU = destData + dest_width * dest_height;
+            uint8_t *destV = destData + dest_width * dest_height * 5 / 4;
+
+            // scale first
+            libyuv::I420Scale(
+                    avframe->data[0], avframe->width, avframe->data[2],
+                    avframe->width / 2, avframe->data[1], avframe->width / 2,
+                    avframe->width, avframe->height, destData, dest_width, destU,
+                    dest_width / 2, destV, dest_width / 2, dest_width, dest_height,
+                    libyuv::kFilterNone);
+
+            int destSize = dest_width * dest_height * 3;
+            tmpData = new char[destSize];
+
+            libyuv::I420ToRGB24(destData, dest_width, destU, dest_width / 2,
+                                destV, dest_width / 2, (uint8_t *) tmpData,
+                                dest_width * 3, dest_width, dest_height);
             char name[20] = {'\0'};
             sprintf(name, "./t%ld.jpg", seekPos);
             rgb2jpg(name, (char *)tmpData, dest_width, dest_height);
@@ -232,13 +260,4 @@ int Decoder::findAudioStream() {
     return 0;
 }
 
-void Decoder::decodeAudio(InputFile *inputFile) {
-
-
-}
-
-void Decoder::decodeVideo(InputFile *inputFile) {
-
-
-}
 

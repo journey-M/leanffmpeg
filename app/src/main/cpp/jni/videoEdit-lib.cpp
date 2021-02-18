@@ -13,6 +13,7 @@ extern "C" {
 #include "libavformat/avformat.h"
 #include "libswscale/swscale.h"
 #include "libswresample/swresample.h"
+#include "libavutil/imgutils.h"
 }
 
 Decoder *decoder;
@@ -112,4 +113,55 @@ thiz, jint start, jint interval, int maxCount) {
     }
 
     return obj_arraylist;
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_gwj_dev_ffmpeg_videoEdit_VideoAPI_seekPreviewPostion(JNIEnv *env, jobject thiz, jint pos,
+                                                          jobject surface) {
+
+    if (!decoder) {
+        FFLOGE("Decoder 未初始化");
+        return;
+    }
+    FrameImage *frameImage = decoder->decodeOneFrame(pos, 1);
+    if (frameImage == NULL) {
+        FFLOGE("没有找到帧");
+        return;
+    }
+
+
+    ANativeWindow *nativeWindow = ANativeWindow_fromSurface(env, surface);
+    ANativeWindow_setBuffersGeometry(nativeWindow, frameImage->width,
+                                     frameImage->height, WINDOW_FORMAT_RGBA_8888);
+
+    ANativeWindow_Buffer outBuffer;
+    if (ANativeWindow_lock(nativeWindow, &outBuffer, 0) == 0) {
+
+        uint8_t *dst_data = static_cast<uint8_t *>(outBuffer.bits);
+
+
+        //单个像素拷贝。
+        for (int i = 0; i < frameImage->width * frameImage->height; i++) {
+            dst_data[i * 4] = frameImage->buffer[i * 3];
+            dst_data[i * 4 + 1] = frameImage->buffer[i * 3 + 1];
+            dst_data[i * 4 + 2] = frameImage->buffer[i * 3 + 2];
+            dst_data[i * 4 + 3] = 0xff;
+        }
+
+        //unlock
+        ANativeWindow_unlockAndPost(nativeWindow);
+    }
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_gwj_dev_ffmpeg_videoEdit_VideoAPI_play(JNIEnv *env, jobject thiz, jfloat time) {
+
+    if (!decoder) {
+        return;
+    }
+//    decoder->
+
 }

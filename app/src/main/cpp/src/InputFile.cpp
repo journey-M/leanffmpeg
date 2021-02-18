@@ -30,14 +30,14 @@ void InputFile::openInputFile(const char* path){
 
 	int ret = 0;
 	/* slurp file content into buffer */
-	ret = av_file_map(input_filename, &buffer, &buffer_size, 0, NULL);
-	if (ret < 0){
-		fprintf(stderr, "file map error \n");
-	}
-
-	/* fill opaque structure used by the AVIOContext read callback */
-	bd.ptr  = buffer;
-	bd.size = buffer_size;
+//	ret = av_file_map(input_filename, &buffer, &buffer_size, 0, NULL);
+//	if (ret < 0){
+//		fprintf(stderr, "file map error \n");
+//	}
+//
+//	/* fill opaque structure used by the AVIOContext read callback */
+//	bd.ptr  = buffer;
+//	bd.size = buffer_size;
 
 	if (!(fmt_ctx = avformat_alloc_context())) {
 		ret = AVERROR(ENOMEM);
@@ -45,20 +45,20 @@ void InputFile::openInputFile(const char* path){
 		return;
 	}
 
-	avio_ctx_buffer = av_malloc(avio_ctx_buffer_size);
-	if (!avio_ctx_buffer) {
-		ret = AVERROR(ENOMEM);
-		fprintf(stderr, "file map error \n");
-	}
-	avio_ctx = avio_alloc_context((unsigned char*)avio_ctx_buffer, avio_ctx_buffer_size,
-			0, &bd, &read_packet, NULL, NULL);
-	if (!avio_ctx) {
-		ret = AVERROR(ENOMEM);
-		return ;
-	}
-	fmt_ctx->pb = avio_ctx;
+//	avio_ctx_buffer = av_malloc(avio_ctx_buffer_size);
+//	if (!avio_ctx_buffer) {
+//		ret = AVERROR(ENOMEM);
+//		fprintf(stderr, "file map error \n");
+//	}
+//	avio_ctx = avio_alloc_context((unsigned char*)avio_ctx_buffer, avio_ctx_buffer_size,
+//			0, &bd, &read_packet, NULL, NULL);
+//	if (!avio_ctx) {
+//		ret = AVERROR(ENOMEM);
+//		return ;
+//	}
+//	fmt_ctx->pb = avio_ctx;
 
-	ret = avformat_open_input(&fmt_ctx, NULL, NULL, NULL);
+	ret = avformat_open_input(&fmt_ctx,input_filename , NULL, NULL);
 	if (ret < 0) {
 		fprintf(stderr, "Could not open input\n");
 		return ;
