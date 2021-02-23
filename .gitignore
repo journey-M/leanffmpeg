@@ -17,3 +17,5 @@ app/src/main/cpp/unix/build
 *.mp4
 ./app/src/main/cpp/.cache/
 app/src/main/cpp/unix/*.jpg
+app/src/main/cpp/.cache
+app/src/main/cpp/unix/.cache

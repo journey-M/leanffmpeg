@@ -88,18 +88,20 @@ int main (int argc, char* argv[]){
 	//first check and open InputFile
 	InputFile inputFile(argv[1]);
 
-	Decoder decoder(&inputFile);
+	// Decoder decoder(&inputFile);
 
   //获取视频的封面
   //getImageThums(&decoder);
 	
 	//seek Frame in video
-  seekImageFrame(&decoder);
+	//seekImageFrame(&decoder);
 	
 
-	//play video
-//  Player player();
-//  player.play();
+	shared_ptr<Player> shPlayer =make_shared<Player>();
+	Player* player = shPlayer.get();
+	player->addInputFile(&inputFile);
+
+  player->play();
 
 
   sleep(10);

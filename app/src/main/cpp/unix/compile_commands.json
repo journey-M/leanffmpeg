@@ -1,17 +1,1 @@
-[
-{
-  "directory": "/home/guoweijie004/workspaces/openSource-projects/ffmpeg-proj/ffsdk/unix/build",
-  "command": "/usr/bin/c++  -I/home/guoweijie004/workspaces/openSource-projects/ffmpeg-proj/ffsdk/unix/include -I/home/guoweijie004/workspaces/openSource-projects/ffmpeg-proj/ffsdk/unix/../src  -o CMakeFiles/Decoder.dir/home/guoweijie004/workspaces/openSource-projects/ffmpeg-proj/ffsdk/src/Decoder.cpp.o -c /home/guoweijie004/workspaces/openSource-projects/ffmpeg-proj/ffsdk/src/Decoder.cpp",
-  "file": "/home/guoweijie004/workspaces/openSource-projects/ffmpeg-proj/ffsdk/src/Decoder.cpp"
-},
-{
-  "directory": "/home/guoweijie004/workspaces/openSource-projects/ffmpeg-proj/ffsdk/unix/build",
-  "command": "/usr/bin/c++  -I/home/guoweijie004/workspaces/openSource-projects/ffmpeg-proj/ffsdk/unix/include -I/home/guoweijie004/workspaces/openSource-projects/ffmpeg-proj/ffsdk/unix/../src  -o CMakeFiles/InputFile.dir/home/guoweijie004/workspaces/openSource-projects/ffmpeg-proj/ffsdk/src/InputFile.cpp.o -c /home/guoweijie004/workspaces/openSource-projects/ffmpeg-proj/ffsdk/src/InputFile.cpp",
-  "file": "/home/guoweijie004/workspaces/openSource-projects/ffmpeg-proj/ffsdk/src/InputFile.cpp"
-},
-{
-  "directory": "/home/guoweijie004/workspaces/openSource-projects/ffmpeg-proj/ffsdk/unix/build",
-  "command": "/usr/bin/c++  -I/home/guoweijie004/workspaces/openSource-projects/ffmpeg-proj/ffsdk/unix/include -I/home/guoweijie004/workspaces/openSource-projects/ffmpeg-proj/ffsdk/unix/../src  -o CMakeFiles/a.dir/main.cpp.o -c /home/guoweijie004/workspaces/openSource-projects/ffmpeg-proj/ffsdk/unix/main.cpp",
-  "file": "/home/guoweijie004/workspaces/openSource-projects/ffmpeg-proj/ffsdk/unix/main.cpp"
-}
-]
+build/compile_commands.json
