@@ -34,8 +34,7 @@ thiz, jstring jpath
 
     avformat_network_init();
     //first check and open InputFile
-    inputFile = new InputFile();
-    inputFile->openInputFile(path);
+    inputFile = new InputFile(path);
 
     decoder = new Decoder(inputFile);
     return 0;

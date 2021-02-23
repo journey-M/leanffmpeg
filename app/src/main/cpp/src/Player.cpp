@@ -1,70 +1,35 @@
 #include "Player.h"
 
 
-Player::Player(AVFormatContext *fmt_c, Decoder *dec) {
-    this->decoder = dec;
-    this->fmt_ctx = fmt_c;
-    state = new PlayerState();
+Player::Player() {
 }
 
 Player::~Player() {
-    delete state;
 }
 
 
-void *Player::readPacketTh(void *playPtr) {
-    Player *player;
-    if (player) {
-        player = (Player *) playPtr;
-    }
+void Player::addInputFile(InputFile *inputFile) {
+    inputs_files.push_back(inputFile);
+    decoder_maps.insert(pair<InputFile*, Decoder*>(inputFile, new Decoder(inputFile)));
+}
 
-    int ret = -1;
-    AVRational time_base = player->decoder->videoStream->time_base;
-    int64_t seekPos = player->start / av_q2d(time_base);
+void Player::removeInputFile(InputFile *inputFile) {
+    for (vector<InputFile *>::iterator iter = inputs_files.begin();
+         iter != inputs_files.end(); iter++) {
+        if (*iter == inputFile) {
 
-    ret = avformat_seek_file(player->fmt_ctx, player->decoder->videoStreamIndex, INT64_MIN, seekPos,
-                             seekPos,
-                             AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME);
-    if (ret < 0) {
-        fprintf(stderr, "seek faild \n");
-        return NULL;
-    }
+            //删除map里面的内容
+            map<InputFile*, Decoder*>::iterator mapiter = decoder_maps.find(inputFile);
+            delete mapiter->second;
+            decoder_maps.erase(mapiter);
 
-    for (;;) {
-        AVPacket *packet = av_packet_alloc();
-        ret = av_read_frame(player->fmt_ctx, packet);
-        if (ret < 0) {
-            //文件结尾或者 出错
-            av_packet_free(&packet);
-            break;
-        } else if (ret >= 0) {
-
-            //判断当前解码的packet栈是否满了
-            if (player->audioPacketList.size() + player->audioPacketList.size() >
-                player->max_packet_list_size) {
-                //set the max time to wait
-                struct timeval now;
-                struct timespec timeSpec;
-                gettimeofday(&now, NULL);
-                timeSpec.tv_sec = now.tv_sec;
-                timeSpec.tv_nsec =
-                        now.tv_usec * 1000 + player->max_packet_read_sleep_time * 1000000;
-                pthread_mutex_lock(&player->videoMutex);
-                pthread_cond_timedwait(&player->videoThCond, &player->videoMutex, &timeSpec);
-                pthread_mutex_unlock(&player->videoMutex);
-            }
-
-            if (player->decoder->videoStreamIndex > 0 &&
-                packet->stream_index == player->decoder->videoStreamIndex) {
-                player->videoPacketList.push_back(packet);
-            } else if (player->decoder->audioStreamIndex > 0 &&
-                       packet->stream_index == player->decoder->videoStreamIndex) {
-                player->audioPacketList.push_back(packet);
-            }
+            //删除inputfiles里面的内容
+            iter = inputs_files.erase(iter);
+            iter--;
+            //erase函数的返回指向当前被删除元素的下一个元素的迭代器
+            return;
         }
     }
-
-    return NULL;
 }
 
 void Player::setCallback(PlayCallback *scallback) {
@@ -72,15 +37,15 @@ void Player::setCallback(PlayCallback *scallback) {
 }
 
 
-int Player::play(double start) {
-    if (isPlaying) {
-        return -1;
-    }
-    this->start = start;
-    int ret = pthread_create(&videoTh, NULL, (&Player::readPacketTh), this);
-    if (ret < 0) {
-        return -1;
-    }
+int Player::play() {
+//    if (isPlaying) {
+//        return -1;
+//    }
+//    this->start = start;
+//    int ret = pthread_create(&videoTh, NULL, (&Player::readPacketTh), this);
+//    if (ret < 0) {
+//        return -1;
+//    }
 
     return 0;
 }

@@ -5,71 +5,61 @@
 #include "InputFile.h"
 #include "Decoder.h"
 #include <thread>
-extern "C"{
+#include <map>
+
+extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <time.h>
 
 }
 
-struct Clock{
-  double pts;
+struct Clock {
+    double pts;
 };
 
-struct PlayerState{
-  Clock videoClock;
-  Clock audioClock;
+struct PlayerState {
+    Clock videoClock;
+    Clock audioClock;
 };
 
-struct PlayCallback{
- int (*renderVideo)();
- int (*renderAudio)();
+struct PlayCallback {
+    int (*renderVideo)();
+
+    int (*renderAudio)();
 };
 
-class Player{
-  public:
-    Decoder * decoder;
-		AVFormatContext *fmt_ctx = NULL;
-    PlayerState *state;
+class Player {
+public:
     PlayCallback *stCallback;
-    vector<AVPacket*> videoPacketList;
-    vector<AVPacket*> audioPacketList;
 
+    vector<InputFile *> inputs_files;
 
-    Player(AVFormatContext *fmt_ctx, Decoder *dec);
+    Player();
+
     ~Player();
 
-    int play(double start);
+    void addInputFile(InputFile *inputFile);
+
+    void removeInputFile(InputFile *inputFile);
+
+    int play();
 
     void playVideo();
+
     void playAudio();
 
     void setCallback(PlayCallback *scallback);
-    
-    
-  private:
-    double start;
-    static void* readPacketTh(void * arg);
 
-    const int max_packet_list_size = 1024;
-    //10毫秒
-    const int max_packet_read_sleep_time = 10;
-
-	int isPlaying = 0;
-	pthread_t videoTh;
-	pthread_cond_t videoThCond = PTHREAD_COND_INITIALIZER ;
-	pthread_mutex_t videoMutex = PTHREAD_MUTEX_INITIALIZER;
+    void seekTimeLine();
 
 
+private:
+    map<InputFile*, Decoder*> decoder_maps;
 
-
+    void *readPacketTh(void *arg);
 
 };
-
-
-
-
-
 
 
 #endif

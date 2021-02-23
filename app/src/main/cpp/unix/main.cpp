@@ -86,8 +86,7 @@ int main (int argc, char* argv[]){
 
 	avformat_network_init();
 	//first check and open InputFile
-	InputFile inputFile;
-	inputFile.openInputFile(argv[1]);
+	InputFile inputFile(argv[1]);
 
 	Decoder decoder(&inputFile);
 
@@ -99,8 +98,8 @@ int main (int argc, char* argv[]){
 	
 
 	//play video
-  Player player(inputFile.fmt_ctx,&decoder);
-  player.play(3.2f);
+//  Player player();
+//  player.play();
 
 
   sleep(10);

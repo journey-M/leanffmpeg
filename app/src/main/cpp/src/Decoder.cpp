@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <libavutil/error.h>
 #include <string>
-#include "../jni/native_log.h"
+#include "Log.h"
 
 
 Decoder::Decoder(InputFile *input) {
@@ -379,8 +379,8 @@ void Decoder::scalAndSaveFrame(AVFrame *avframe, double playTime) {
     int dest_width = avframe->width / 10;
     int dest_height = avframe->height / 10;
 
-    FFLOGE("origin width : %d ,  %d ,  dest : %d,  %d", avframe->width, avframe->height,
-           dest_width, dest_height)
+    FFlog("origin width : %d ,  %d ,  dest : %d,  %d", avframe->width, avframe->height,
+           dest_width, dest_height);
 
     destFrame->format = AV_PIX_FMT_YUV420P;
     destFrame->width = dest_width;
