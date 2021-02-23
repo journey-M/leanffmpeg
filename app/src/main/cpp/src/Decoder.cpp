@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <libavutil/error.h>
 #include <string>
+#include "../jni/native_log.h"
 
 
 Decoder::Decoder(InputFile *input) {
@@ -42,9 +43,10 @@ FrameImage *Decoder::decodeOneFrame(int start, int cut) {
     int64_t seekPos = start / av_q2d(time_base);
 
     ret = avformat_seek_file(mInputFile->fmt_ctx, videoStreamIndex, INT64_MIN, seekPos, seekPos,
-            AVSEEK_FLAG_BACKWARD|AVSEEK_FLAG_FRAME);
-    if(ret < 0){
-        ret = avformat_seek_file(mInputFile->fmt_ctx, videoStreamIndex, INT64_MIN, seekPos, seekPos, 0);
+                             AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME);
+    if (ret < 0) {
+        ret = avformat_seek_file(mInputFile->fmt_ctx, videoStreamIndex, INT64_MIN, seekPos, seekPos,
+                                 0);
     }
 
 
@@ -57,12 +59,12 @@ FrameImage *Decoder::decodeOneFrame(int start, int cut) {
 
     while (!gotFrame) {
         ret = av_read_frame(mInputFile->fmt_ctx, &avPacket);
-        if(AVERROR(ret) == AVERROR_EOF){
+        if (AVERROR(ret) == AVERROR_EOF) {
             fprintf(stderr, "av read frame faile %d \n", AVERROR(ret));
             break;
-        }else if (ret < 0) {
+        } else if (ret < 0) {
             fprintf(stderr, "av read frame faile %d \n", AVERROR(ret));
-           break;
+            break;
         }
 
         if (avPacket.stream_index != videoStreamIndex) {
@@ -260,4 +262,201 @@ int Decoder::findAudioStream() {
     return 0;
 }
 
+/**
+ * 将AVFrame(YUV420格式)保存为JPEG格式的图片
+ *
+ * @param width YUV420的宽
+ * @param height YUV42的高
+ *
+ */
+int Decoder::writeJPEG(AVFrame *pFrame, const char *path, int width, int height) {
+    // 分配AVFormatContext对象
+    AVFormatContext *pFormatCtx = avformat_alloc_context();
+
+    // 设置输出文件格式
+    pFormatCtx->oformat = av_guess_format("mjpeg", NULL, NULL);
+    // 创建并初始化一个和该url相关的AVIOContext
+    if (avio_open(&pFormatCtx->pb, path, AVIO_FLAG_READ_WRITE) < 0) {
+        return -1;
+    }
+
+    // 构建一个新stream
+    AVStream *pAVStream = avformat_new_stream(pFormatCtx, 0);
+    if (pAVStream == NULL) {
+        return -1;
+    }
+
+    // 设置该stream的信息
+    AVCodecContext *pCodecCtx = pAVStream->codec;
+
+    pCodecCtx->codec_id = pFormatCtx->oformat->video_codec;
+    pCodecCtx->codec_type = AVMEDIA_TYPE_VIDEO;
+    pCodecCtx->pix_fmt = AV_PIX_FMT_YUVJ420P;
+    pCodecCtx->width = width;
+    pCodecCtx->height = height;
+    pCodecCtx->time_base.num = 1;
+    pCodecCtx->time_base.den = 25;
+
+    // Begin Output some information
+    av_dump_format(pFormatCtx, 0, path, 1);
+    // End Output some information
+
+    // 查找解码器
+    AVCodec *pCodec = avcodec_find_encoder(pCodecCtx->codec_id);
+    if (!pCodec) {
+        return -1;
+    }
+    // 设置pCodecCtx的解码器为pCodec
+    if (avcodec_open2(pCodecCtx, pCodec, NULL) < 0) {
+        return -1;
+    }
+
+    //Write Header
+    avformat_write_header(pFormatCtx, NULL);
+
+    int y_size = pCodecCtx->width * pCodecCtx->height;
+
+    //Encode
+    // 给AVPacket分配足够大的空间
+    AVPacket pkt;
+    av_new_packet(&pkt, y_size * 3);
+
+    //
+    int got_picture = 0;
+    int ret = avcodec_encode_video2(pCodecCtx, &pkt, pFrame, &got_picture);
+    if (ret < 0) {
+        return -1;
+    }
+    if (got_picture == 1) {
+        //pkt.stream_index = pAVStream->index;
+        ret = av_write_frame(pFormatCtx, &pkt);
+    }
+
+    av_free_packet(&pkt);
+
+    //Write Trailer
+    av_write_trailer(pFormatCtx);
+
+    if (pAVStream) {
+        avcodec_close(pAVStream->codec);
+    }
+    avio_close(pFormatCtx->pb);
+    avformat_free_context(pFormatCtx);
+
+    v_path_results.push_back(path);
+    return 0;
+}
+
+
+void Decoder::push_n_avframe(AVFrame *frame) {
+    double clockTimed = timedIndex * _time_val;
+    //首帧直接保存
+    if (timedIndex == 0) {
+        scalAndSaveFrame(frame, clockTimed);
+        timedIndex++;
+        return;
+    }
+    double frameTimed = frame->pts * av_q2d(videoStream->time_base);
+
+    //如果当前的图片大于时间值，则保存上次的frame
+    if (frameTimed > clockTimed) {
+        scalAndSaveFrame(preFrame, clockTimed);
+        av_frame_free(&preFrame);
+        preFrame = frame;
+        timedIndex++;
+    } else {
+        if (preFrame != NULL) {
+            av_frame_free(&preFrame);
+        }
+        preFrame = frame;
+    }
+}
+
+
+void Decoder::scalAndSaveFrame(AVFrame *avframe, double playTime) {
+    AVFrame *destFrame = av_frame_alloc();
+
+    int dest_width = avframe->width / 10;
+    int dest_height = avframe->height / 10;
+
+    FFLOGE("origin width : %d ,  %d ,  dest : %d,  %d", avframe->width, avframe->height,
+           dest_width, dest_height)
+
+    destFrame->format = AV_PIX_FMT_YUV420P;
+    destFrame->width = dest_width;
+    destFrame->height = dest_height;
+    int ret = av_frame_get_buffer(destFrame, 32);
+    av_frame_make_writable(destFrame);
+
+    if (ret < 0) {
+        fprintf(stderr, "avpicture_fill  error---- \n");
+    }
+
+    // scale first
+    libyuv::I420Scale(
+            avframe->data[0], avframe->width, avframe->data[2],
+            avframe->width / 2, avframe->data[1], avframe->width / 2,
+            avframe->width, avframe->height, destFrame->data[0], dest_width,
+            destFrame->data[2],
+            dest_width / 2, destFrame->data[1], dest_width / 2, dest_width, dest_height,
+            libyuv::kFilterNone);
+
+
+    char pathfile[1000];
+    sprintf(pathfile, "/sdcard/zzjk/test_%f.jpg", playTime);
+
+    writeJPEG(destFrame, pathfile, destFrame->width, destFrame->height);
+}
+
+
+vector<string> Decoder::initVideoInfos() {
+
+    v_path_results.clear();
+
+    AVPacket avPacket;
+    int ret = -1;
+    //seek 到0位置，解码获取所有的图片，并保存
+    ret = avformat_seek_file(mInputFile->fmt_ctx, videoStreamIndex, INT64_MIN, 0, 0,
+                             AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME);
+    if (ret < 0) {
+        fprintf(stderr, "seek file  error \n");
+    }
+
+    avcodec_flush_buffers(vCodecCtx);
+
+    //1秒内抽取10帧图片，直到最后
+    while (timedIndex < 31) {
+        ret = av_read_frame(mInputFile->fmt_ctx, &avPacket);
+        if (AVERROR(ret) == AVERROR_EOF) {
+            fprintf(stderr, "av read frame faile %d \n", AVERROR(ret));
+            break;
+        } else if (ret < 0) {
+            fprintf(stderr, "av read frame faile %d \n", AVERROR(ret));
+            break;
+        }
+
+        if (avPacket.stream_index != videoStreamIndex) {
+            continue;
+        }
+
+        ret = avcodec_send_packet(vCodecCtx, &avPacket);
+        if (ret < 0) {
+            fprintf(stderr, "error  send package \n");
+            continue;
+        }
+
+        AVFrame *avframe = av_frame_alloc();
+        ret = avcodec_receive_frame(vCodecCtx, avframe);
+        if (ret < 0) {
+            fprintf(stderr, "recive error \n");
+            continue;
+        } else {
+            push_n_avframe(avframe);
+        }
+    }
+    push_n_avframe(NULL);
+    av_packet_unref(&avPacket);
+
+    return v_path_results;
+}
 

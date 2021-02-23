@@ -6,14 +6,15 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.method.Touch;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceView;
 import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-import gwj.dev.ffmpeg.glplayer.PlayInOpenGlActivity;
 import gwj.dev.ffmpeg.ffmpegCmd.FFmpegCmd;
+import gwj.dev.ffmpeg.glplayer.PlayInOpenGlActivity;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -59,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     findViewById(R.id.sample_edit_video).setOnClickListener(this);
     findViewById(R.id.sample_cut_video).setOnClickListener(this);
     findViewById(R.id.sample_play_ingles).setOnClickListener(this);
+    findViewById(R.id.sample_touch_view).setOnClickListener(this);
   }
 
   @Override
@@ -106,6 +108,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         break;
       case R.id.sample_cut_video:
         ffmpegTest();
+        break;
+      case R.id.sample_touch_view:
+        startTouchView();
         break;
     }
   }
@@ -188,6 +193,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
   private void gotoVideoEdit() {
     Intent intent = new Intent(this, VideoEditActivity.class);
+    startActivity(intent);
+  }
+
+  private void startTouchView(){
+    Intent intent = new Intent(this, TouchActivity.class);
     startActivity(intent);
   }
 }

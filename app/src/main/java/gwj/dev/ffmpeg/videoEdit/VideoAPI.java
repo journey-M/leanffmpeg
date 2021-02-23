@@ -27,5 +27,7 @@ public class VideoAPI {
 
   public native void seekPreviewPostion(int pos, Surface surface);
 
+  public native ArrayList<String> createThumbs(String vPath, String outPath);
+
   public native void play(float time);
 }

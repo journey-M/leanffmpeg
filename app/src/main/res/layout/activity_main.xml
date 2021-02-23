@@ -84,6 +84,15 @@
           android:text="编辑视频"
           android:layout_gravity="center" />
 
+        <Button
+          android:id="@+id/sample_touch_view"
+          android:layout_marginTop="8dp"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="触摸view"
+          android:layout_gravity="center" />
+
+
         <SurfaceView
             android:id="@+id/surface_view"
             android:layout_marginTop="26dp"

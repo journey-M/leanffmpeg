@@ -8,6 +8,7 @@
 extern "C" {
 #include <libyuv.h>
 #include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
 #ifdef unix
 #include <jpeglib.h>
 #endif
@@ -43,10 +44,24 @@ public :
     AVCodecContext *vCodecCtx;
     AVCodecContext *aCodecCtx;
 
+    AVFrame *preFrame = NULL;
+    int timedIndex = 0;
+    double _time_val = (double )0.1;
+    vector<string> v_path_results;
+
     Decoder(InputFile *inputFile);
 
     int getVideoImages(Options *option, vector<FrameImage *> *result, int maxcount);
     FrameImage *decodeOneFrame(int start, int cut);
+
+    int writeJPEG(AVFrame *pFrame,const char *path,  int width, int height);
+
+    vector<string> initVideoInfos();
+
+
+    void push_n_avframe(AVFrame * avFrame);
+
+    void scalAndSaveFrame(AVFrame * avFrame,  double playTime);
 
 
 private:

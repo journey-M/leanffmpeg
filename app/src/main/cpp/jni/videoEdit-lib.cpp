@@ -165,3 +165,49 @@ Java_gwj_dev_ffmpeg_videoEdit_VideoAPI_play(JNIEnv *env, jobject thiz, jfloat ti
 //    decoder->
 
 }
+
+
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_gwj_dev_ffmpeg_videoEdit_VideoAPI_createThumbs(JNIEnv *env, jobject thiz, jstring v_path, jstring joutpath) {
+    // TODO: implement createThumbs()
+    if (!decoder) {
+        return nullptr;
+    }
+    vector<string> results = decoder->initVideoInfos();
+
+
+
+    jclass list_jcls = env->FindClass("java/util/ArrayList");
+    if (list_jcls == NULL) {
+        FFLOGE("ArrayList没找到相关类!")
+        return 0;
+    }
+
+    //获取ArrayList构造函数id
+    jmethodID list_init = env->GetMethodID(list_jcls, "<init>", "()V");
+    //创建一个ArrayList对象
+//    jobject list_obj = env->NewObject(list_jcls, list_init, "");
+
+    //获取ArrayList对象的add()的methodID
+//    jmethodID list_add = env->GetMethodID(list_jcls, "add", "(Ljava/lang/Object;)Z");
+
+//
+//    for(int i=0 ; i< results.size(); i++){
+//
+//
+//    }
+//
+//
+//    jbyteArray jArrayData = env->NewByteArray(48);
+//    env->SetByteArrayRegion(jArrayData, 0, 48, (jbyte *) ledData);
+//    jclass claxx = (*envGloble)->GetObjectClass(envGloble, thizObj);
+//    jmethodID method = (*envGloble)->GetMethodID(envGloble, claxx, "onCM39getLedData",
+//                                                 "(II[B)V");
+//    (*envGloble)->CallVoidMethod(envGloble, thizObj, method, bigstart, biglen, jArrayData);
+//    (*envGloble)->ReleaseByteArrayElements(envGloble, jArrayData,
+//                                           (*envGloble)->GetByteArrayElements(envGloble,
+//                                                                              jArrayData,
+//                                                                              JNI_FALSE), 0);
+
+}

@@ -36,6 +36,8 @@
         <activity android:name=".glplayer.PlayInOpenGlActivity">
         </activity>
 
+        <activity android:name="TouchActivity"/>
+
 
     </application>
 

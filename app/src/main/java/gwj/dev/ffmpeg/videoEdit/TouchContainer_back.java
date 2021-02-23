@@ -1,8 +1,6 @@
 package gwj.dev.ffmpeg.videoEdit;
 
 import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Matrix;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -10,18 +8,18 @@ import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-public class VContainer extends HorizontalScrollView {
+public class TouchContainer_back extends HorizontalScrollView {
   LinearLayout container;
 
-  public VContainer(Context context) {
+  public TouchContainer_back(Context context) {
     this(context, null);
   }
 
-  public VContainer(Context context, AttributeSet attrs) {
+  public TouchContainer_back(Context context, AttributeSet attrs) {
     this(context, attrs, -1);
   }
 
-  public VContainer(Context context, AttributeSet attrs, int defStyleAttr) {
+  public TouchContainer_back(Context context, AttributeSet attrs, int defStyleAttr) {
     super(context, attrs, defStyleAttr);
     init();
   }

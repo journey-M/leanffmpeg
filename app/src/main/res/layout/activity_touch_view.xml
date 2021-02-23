@@ -8,11 +8,12 @@
   android:orientation="vertical"
   tools:context="gwj.dev.ffmpeg.MainActivity">
 
-  <LinearLayout
-    android:id="@+id/fragment_holder"
+
+  <gwj.dev.ffmpeg.videoEdit.TouchContainer
+    android:id="@+id/touch_container"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical" />
+    android:layout_height="match_parent" />
+
 
 </LinearLayout>
 
