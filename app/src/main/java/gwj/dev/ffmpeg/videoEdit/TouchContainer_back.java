@@ -4,11 +4,13 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-public class TouchContainer_back extends HorizontalScrollView {
+/**
+ * 完整的 支持touch事件的view
+ */
+public class TouchContainer_back extends LinearLayout {
   LinearLayout container;
 
   public TouchContainer_back(Context context) {
@@ -43,16 +45,6 @@ public class TouchContainer_back extends HorizontalScrollView {
       tvTest1.setText(
           "title 测试页title 测试页\"title 测试页\"title 测试页\"title 测试页\"title 测试页\"title 测试页\"title 测试页\"title 测试页\"title 测试页\"title 测试页\"title 测试页\"title 测试页\"title 测试页\"title 测试页\"title 测试页\"title 测试页\"title 测试页\"");
       container.addView(tvTest1);
-    }
-  }
-
-  void notifyScales(float ratio) {
-    View child;
-    for (int i = 0; i < container.getChildCount(); i++) {
-      child = container.getChildAt(i);
-      if (child instanceof IHorizentalScale) {
-        ((IHorizentalScale) child).onHorizentalScal(ratio);
-      }
     }
   }
 
@@ -114,7 +106,8 @@ public class TouchContainer_back extends HorizontalScrollView {
       case MotionEvent.ACTION_POINTER_UP:
         moveType = 0;
     }
-    return super.onTouchEvent(event);
+    return true;
+    //return super.onTouchEvent(event);
   }
 
   // 触碰两点间距离
@@ -128,9 +121,10 @@ public class TouchContainer_back extends HorizontalScrollView {
   // 取旋转角度
   private float getDegree(MotionEvent event) {
     //得到两个手指间的旋转角度
-    double delta_x = event.getX(0) - event.getX(1);
-    double delta_y = event.getY(0) - event.getY(1);
-    double radians = Math.atan2(delta_y, delta_x);
-    return (float) Math.toDegrees(radians);
+    //double delta_x = event.getX(0) - event.getX(1);
+    //double delta_y = event.getY(0) - event.getY(1);
+    //double radians = Math.atan2(delta_y, delta_x);
+    //return (float) Math.toDegrees(radians);
+    return 0;
   }
 }

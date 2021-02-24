@@ -13,9 +13,8 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
-import gwj.dev.ffmpeg.videoEdit.PreviewContainer;
+import gwj.dev.ffmpeg.videoEdit.VPreviewContainer;
 import gwj.dev.ffmpeg.videoEdit.VideoAPI;
 import java.util.ArrayList;
 
@@ -119,7 +118,7 @@ public class VideoEditFragment extends Fragment implements View.OnClickListener 
 
   private void loadVideoInfos(){
 
-    PreviewContainer previewContainer = new PreviewContainer(getContext());
+    VPreviewContainer previewContainer = new VPreviewContainer(getContext());
 
     metarailContainer.addView(previewContainer);
     previewContainer.loadImages("/sdcard/zzjk");
