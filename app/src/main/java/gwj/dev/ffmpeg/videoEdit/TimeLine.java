@@ -4,22 +4,106 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
 
 public class TimeLine extends TextView implements IHorizentalScale {
 
-  String subs[] = new String[] { "" };
+  public interface ITimeChangeListener {
+    void onTimeChanged(SpanSize spanSize, float distance);
+  }
+
+  class SpanSize {
+
+    int fspans[] = { 5, 10, 15, 30, 60, 90, 150, 300, 600 };
+
+    int currentSize = 5;
+
+    public int getCurrentSize() {
+      return currentSize;
+    }
+
+    public int increateSpan() {
+      int index = -1;
+      for (int i = 0; i < fspans.length; i++) {
+        if (fspans[i] == currentSize) {
+          index = i;
+          break;
+        }
+      }
+      //最大则返回最大的
+      if (index == fspans.length - 1) {
+        return currentSize;
+      }
+      currentSize = fspans[index + 1];
+      return currentSize;
+    }
+
+    public int decressSpan() {
+      int index = -1;
+      for (int i = 0; i < fspans.length; i++) {
+        if (fspans[i] == currentSize) {
+          index = i;
+          break;
+        }
+      }
+      //最大则返回最大的
+      if (index == 0) {
+        return currentSize;
+      }
+      currentSize = fspans[index - 1];
+      return currentSize;
+    }
+
+    public boolean isMax() {
+      return currentSize == fspans[fspans.length - 1];
+    }
+
+    public boolean isMin() {
+      return currentSize == fspans[0];
+    }
+
+    public float nextScaleBigValueDis() {
+      int fspans[] = { 5, 10, 15, 30, 60, 90, 150, 300, 600 };
+      if (currentSize == 5
+          || currentSize == 15
+          || currentSize == 30
+          || currentSize == 150
+          || currentSize == 300) {
+        return 0.5f;
+      } else if (currentSize == 10 || currentSize == 60) {
+        return 0.6666666f;
+      } else if (currentSize == 90) {
+        return 0.6f;
+      }
+      return 1.0f;
+    }
+
+    public float nextScaleSmallValueDis() {
+      if (currentSize == 10
+          || currentSize == 30
+          || currentSize == 60
+          || currentSize == 300
+          || currentSize == 600) {
+        return 0.5f;
+      } else if (currentSize == 15 || currentSize == 90) {
+        return 0.6666666f;
+      } else if (currentSize == 150) {
+        return 0.6f;
+      }
+      return 1.0f;
+    }
+  }
 
   /**
    * 默认20秒
    */
-  private int length = 20;
-  private int minDotSpace = 0;
+  private float totalTime = 20;
+  private int standDotSpace = 0;
   private float scaleDotSpace = 0;
-  private int fSpace = 5;
+  private SpanSize spanSize = new SpanSize();
+  private ITimeChangeListener lisntner;
 
   public TimeLine(Context context) {
     this(context, null);
@@ -36,14 +120,14 @@ public class TimeLine extends TextView implements IHorizentalScale {
   }
 
   private void init() {
-    minDotSpace = SINGLE_WIDTH * 10 / 12;
-    scaleDotSpace = minDotSpace;
+    standDotSpace = SINGLE_WIDTH * NUM_IMAGES_EVERY_SECODN / NUM_DISTANCE_EVERY_SECODN;
+    scaleDotSpace = standDotSpace;
   }
 
-  public void setTimeLength(int len) {
-    this.length = len;
+  public void setTotalTime(float len) {
+    this.totalTime = len;
     LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) getLayoutParams();
-    params.width = SINGLE_WIDTH * 10 * length;
+    params.width = (int) (SINGLE_WIDTH * NUM_IMAGES_EVERY_SECODN * totalTime);
     setLayoutParams(params);
   }
 
@@ -53,9 +137,9 @@ public class TimeLine extends TextView implements IHorizentalScale {
   protected void onDraw(Canvas canvas) {
     int j = 0;
     for (int i = 0; i < getWidth(); i = (int) (i + scaleDotSpace)) {
-      //canvas.drawRect(new Rect(i, 20, i + 20, 40), paint);
       String text = drawfText(j++);
       paint.setTextSize(32);
+      paint.setTextAlign(Paint.Align.CENTER);
       canvas.drawText(text, i, 35, paint);
     }
     super.onDraw(canvas);
@@ -64,63 +148,69 @@ public class TimeLine extends TextView implements IHorizentalScale {
   /**
    * 0f  5f 10f  15f 20f 25f
    */
-  private String drawfText(int i) {
-    float frameNum = getFrameNumber(i);
-
-    return frame2Time(frameNum);
-    //if (i %2 ==0){
-    //  return  (i/2 )* fSpace+ "f";
-    //}
-    //return "~";
-  }
-
-  private String frame2Time(float framNum) {
-
-    if (framNum % 30 == 0) {
-      return framNum / 30 + "s";
+  private String drawfText(int distanceNum) {
+    if (distanceNum % 2 == 0) {
+      if (distanceNum == 0) {
+        return "0";
+      }
+      int framNumber = distanceNum * spanSize.getCurrentSize() / 2;
+      if (framNumber >= 30) {
+        if (framNumber % 30 == 0) {
+          return framNumber / 30 + "s";
+        }
+      }
+      return framNumber + "f";
+    } else {
+      return "~";
     }
-    if (framNum % 1 == 0) {
-      return framNum + "f";
-    }
-    return "~";
   }
-
-  private float getFrameNumber(int i) {
-    return (float) i * 5 / 2;
-  }
-
 
   private long lastTouchId = -1;
   private int lastWidth = 0;
 
   @Override
-  public void onHorizentalScal(long id, float porcent) {
+  public void onHorizentalScal(long id, float percent) {
     if (lastTouchId != id) {
       lastTouchId = id;
       lastWidth = this.getWidth();
     }
+
+    if (percent > 1 && spanSize.isMin()) {
+      return;
+    }
+    if (percent < 1 && spanSize.isMax()) {
+      return;
+    }
+
     //再次缩小后小于最小的值，则恢复默认
-    if (porcent > 1) {
-      float tmpSpace = scaleDotSpace * porcent;
-      if (tmpSpace > minDotSpace) {
-        scaleDotSpace = minDotSpace;
-        setTimeLength(length);
-        this.invalidate();
-        return;
-      }
+    float tmpSpace = scaleDotSpace * percent;
+    float scale_value = spanSize.nextScaleBigValueDis();
+    if (percent < 0) {
+      scale_value = spanSize.nextScaleSmallValueDis();
+    }
+    //Log.e("tag", "next scale ==" +( percent <0 ? " small ->":" big ->" )+  scale_value);
+    if (tmpSpace <= standDotSpace * scale_value) {
+      scaleDotSpace = standDotSpace;
+      spanSize.increateSpan();
+    } else if (tmpSpace >= standDotSpace * (1 + scale_value)) {
+      scaleDotSpace = standDotSpace;
+      spanSize.decressSpan();
+    } else {
+      scaleDotSpace = tmpSpace;
     }
 
-    scaleDotSpace = scaleDotSpace * porcent;
-    if (scaleDotSpace < minDotSpace/2){
-      scaleDotSpace = minDotSpace/2;
-    }
-
-    int nWidth = (int) (lastWidth * porcent);
-    Log.e("tag", "new  width  = " + nWidth + " -----scale =  " + scaleDotSpace);
+    int nWidth = (int) (lastWidth * percent);
     LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) getLayoutParams();
     params.width = nWidth;
     this.setLayoutParams(params);
-
     this.invalidate();
+
+    if (lisntner != null) {
+      lisntner.onTimeChanged(spanSize, scaleDotSpace);
+    }
+  }
+
+  public void setLisntner(ITimeChangeListener lisntner) {
+    this.lisntner = lisntner;
   }
 }

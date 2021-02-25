@@ -510,10 +510,10 @@ void Decoder::th_read_packet(){
             continue;
         }
 
-        std::unique_lock<std::mutex> lck(video_pkg_list_mutex);
-        video_cond.wait_for(lck,std::chrono::seconds(1))==std::cv_status::timeout);
-        this->videoPacketList.push_back(avPacket);
-        video_pkg_list_mutex.unlock();
+//        std::unique_lock<std::mutex> lck(video_pkg_list_mutex);
+//        video_cond.wait_for(lck,std::chrono::seconds(1))==std::cv_status::timeout);
+//        this->videoPacketList.push_back(avPacket);
+//        video_pkg_list_mutex.unlock();
 
     }
 

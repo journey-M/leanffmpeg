@@ -1,11 +1,8 @@
 package gwj.dev.ffmpeg.videoEdit;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import androidx.annotation.Nullable;
@@ -14,12 +11,13 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VPreviewContainer extends LinearLayout implements IHorizentalScale {
+public class VPreviewContainer extends LinearLayout implements ITimeDistanceListener {
   ArrayList<String> imageList = new ArrayList<>();
   ArrayList<String> listShows = new ArrayList<>();
   private List<ImageView> listImageViews = new ArrayList<>();
 
-  private int length = 20;
+  //时间长度秒
+  private float totalTime = 20;
   private int maxLength = 0;
 
   public VPreviewContainer(Context context) {
@@ -82,7 +80,7 @@ public class VPreviewContainer extends LinearLayout implements IHorizentalScale 
 
     Log.e("tag", "total-----" + imageNum);
     int span = imageList.size() / imageNum;
-    if (span == 0){
+    if (span == 0) {
       span++;
     }
     int index = 0;
@@ -96,39 +94,23 @@ public class VPreviewContainer extends LinearLayout implements IHorizentalScale 
     return listShows;
   }
 
-  private long lastTouchId = -1;
-  private int lastWidth = 0;
-
   @Override
-  public void setTimeLength(int len) {
-    this.length = len;
+  public void setTotalTime(float time) {
+    this.totalTime = time;
     LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) getLayoutParams();
-    maxLength = SINGLE_WIDTH * 10 * length;
+    maxLength = (int) (SINGLE_WIDTH * 10 * totalTime);
     params.width = maxLength;
     setLayoutParams(params);
     Log.e("tag", "max width = " + maxLength);
   }
 
   @Override
-  public void onHorizentalScal(long id, float porcent) {
-    //float nWidth = width * porcent;
-    //setWidth((int) nWidth);
-    if (lastTouchId != id) {
-      lastTouchId = id;
-      lastWidth = this.getWidth();
-    }
-
-    int tmpLen = (int) (lastWidth * porcent);
-    if(porcent > 1){
-      if (tmpLen >  maxLength){
-        tmpLen = maxLength;
-      }
-    }
-    Log.e("tag", "new  width  = " + tmpLen);
+  public void onTimeDistancheChanged(int ftmp, float distance) {
+    float numberFrame = totalTime * 30;
+    int len = (int) (numberFrame / ftmp * distance);
     LayoutParams params = (LayoutParams) getLayoutParams();
-    params.width = tmpLen;
+    params.width = len;
     this.setLayoutParams(params);
-
-    notifyChanged();
+    this.notifyChanged();
   }
 }

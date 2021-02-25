@@ -8,8 +8,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
-public class TouchContainer extends LinearLayout {
+public class TouchContainer extends LinearLayout implements TimeLine.ITimeChangeListener{
   LinearLayout container;
+  private TimeLine line;
+  LayoutParams params_w_match_h_wrap = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+      ViewGroup.LayoutParams.WRAP_CONTENT);
 
   public TouchContainer(Context context) {
     this(context, null);
@@ -31,34 +34,29 @@ public class TouchContainer extends LinearLayout {
         ViewGroup.LayoutParams.WRAP_CONTENT);
     this.addView(container, params);
     addTimeLine();
-    addTestViews();
+    addVideoPreviewViews();
   }
 
   private void addTimeLine() {
-    TimeLine line = new TimeLine(getContext());
-    LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-        ViewGroup.LayoutParams.WRAP_CONTENT);
-    container.addView(line, params);
-
-    line.setTimeLength(2);
+    line = new TimeLine(getContext());
+    container.addView(line, params_w_match_h_wrap);
+    line.setLisntner(this);
+    line.setTotalTime(2);
   }
 
-  private void addTestViews() {
+  private void addVideoPreviewViews() {
     VPreviewContainer vpreview = new VPreviewContainer(getContext());
-    LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-        ViewGroup.LayoutParams.WRAP_CONTENT);
-    container.addView(vpreview, params);
-    vpreview.setTimeLength(2);
-
+    container.addView(vpreview, params_w_match_h_wrap);
+    //vpreview.setTimeLength(2);
     vpreview.loadImages("/sdcard/zzjk");
-    vpreview.notifyChanged();
+    //vpreview.notifyChanged();
   }
 
   void notifyScales(long id, float ratio) {
     View child;
     for (int i = 0; i < container.getChildCount(); i++) {
       child = container.getChildAt(i);
-      if (child instanceof IHorizentalScale) {
+      if (child instanceof IHorizentalScale && child instanceof TimeLine) {
         ((IHorizentalScale) child).onHorizentalScal(id, ratio);
       }
     }
@@ -120,6 +118,23 @@ public class TouchContainer extends LinearLayout {
 
   private void setSubLength(long id, float scale) {
     Log.e("tag", "scale ---- " + scale);
+    float deltf = (float) (Math.abs(scale-1) * 0.3);
+    if (scale > 1){
+      scale = 1+ deltf;
+    }else if (scale < 1){
+      scale = 1- deltf;
+    }
     notifyScales(id, scale);
+  }
+
+  @Override
+  public void onTimeChanged(TimeLine.SpanSize spanSize, float distance) {
+    View child;
+    for (int i = 0; i < container.getChildCount(); i++) {
+      child = container.getChildAt(i);
+      if (child instanceof VPreviewContainer) {
+        ((ITimeDistanceListener) child).onTimeDistancheChanged(spanSize.getCurrentSize(), distance);
+      }
+    }
   }
 }
