@@ -409,7 +409,7 @@ void Decoder::scalAndSaveFrame(AVFrame *avframe, double playTime) {
 }
 
 
-vector<string> Decoder::initVideoInfos() {
+vector<string> Decoder::createVideoThumbs() {
 
     v_path_results.clear();
 
@@ -459,4 +459,98 @@ vector<string> Decoder::initVideoInfos() {
 
     return v_path_results;
 }
+
+
+void Decoder::preperPlay(){
+    std::thread(th_read_packet);
+    std::thread(th_decode_audio_packet());
+    std::thread(th_decode_video_packet());
+
+
+//    pthread_t  t;
+//    pthread_create(&t, NULL, th_read_packet(), NULL);
+
+//    std::thread th;
+//    th = std::thread(th_read_packet());
+}
+
+
+//void th_read_packet(){
+//
+//}
+
+void Decoder::th_read_packet(){
+
+    int start = 0;
+    int ret = -1;
+    AVRational time_base = videoStream->time_base;
+    int64_t seekPos = start / av_q2d(time_base);
+
+    ret = avformat_seek_file(mInputFile->fmt_ctx, videoStreamIndex, INT64_MIN, seekPos, seekPos,
+                             AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME);
+
+    avcodec_flush_buffers(vCodecCtx);
+
+    if (ret < 0) {
+        fprintf(stderr, "av_seek_frame  faile \n");
+    }
+
+    while (1){
+        AVPacket* avPacket = av_packet_alloc();
+        ret = av_read_frame(mInputFile->fmt_ctx, avPacket);
+        if (AVERROR(ret) == AVERROR_EOF) {
+            fprintf(stderr, "av read frame faile %d \n", AVERROR(ret));
+            break;
+        } else if (ret < 0) {
+            fprintf(stderr, "av read frame faile %d \n", AVERROR(ret));
+            break;
+        }
+
+        if (avPacket->stream_index != videoStreamIndex) {
+            continue;
+        }
+
+        std::unique_lock<std::mutex> lck(video_pkg_list_mutex);
+        video_cond.wait_for(lck,std::chrono::seconds(1))==std::cv_status::timeout);
+        this->videoPacketList.push_back(avPacket);
+        video_pkg_list_mutex.unlock();
+
+    }
+
+}
+
+
+void Decoder::th_decode_video_packet(){
+    while (1){
+
+//        int ret = -1;
+//        ret = avcodec_send_packet(vCodecCtx, &avPacket);
+//        if (ret < 0) {
+//            fprintf(stderr, "error  send package \n");
+//            continue;
+//        }
+//
+//        AVFrame *avframe = av_frame_alloc();
+//        ret = avcodec_receive_frame(vCodecCtx, avframe);
+//        if (ret < 0) {
+//            fprintf(stderr, "recive error \n");
+//            continue;
+//        } else {
+//            fprintf(stderr, "success receive frame \n");
+//            fprintf(stderr, " linesize : : %d, %d %d %d \n",
+//                    avframe->linesize[0], avframe->linesize[1],
+//                    avframe->linesize[2], avframe->linesize[3]);
+//
+//            int dest_width = avframe->width / cut;
+//            int dest_height = avframe->height / cut;
+//            char *tmpData;
+        }
+
+
+}
+
+void Decoder::th_decode_audio_packet(){
+
+}
+
 

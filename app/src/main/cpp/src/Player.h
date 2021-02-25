@@ -44,6 +44,8 @@ public:
 
     void removeInputFile(InputFile *inputFile);
 
+    void setTimeStart(float start);
+
     int play();
 
     void playVideo();
@@ -57,6 +59,8 @@ public:
 
 private:
     map<InputFile*, Decoder*> decoder_maps;
+
+    float time_start = 0.0f;
 
     void *readPacketTh(void *arg);
 

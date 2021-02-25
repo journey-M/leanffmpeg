@@ -36,6 +36,10 @@ void Player::setCallback(PlayCallback *scallback) {
     stCallback = scallback;
 }
 
+void Player:: setTimeStart(float start){
+    this->time_start = start;
+}
+
 
 int Player::play() {
 //    if (isPlaying) {

@@ -173,7 +173,7 @@ Java_gwj_dev_ffmpeg_videoEdit_VideoAPI_createThumbs(JNIEnv *env, jobject thiz, j
     if (!decoder) {
         return nullptr;
     }
-    vector<string> results = decoder->initVideoInfos();
+    vector<string> results = decoder->createVideoThumbs();
 
 
 
