@@ -380,7 +380,7 @@ void Decoder::scalAndSaveFrame(AVFrame *avframe, double playTime) {
     int dest_height = avframe->height / 10;
 
     FFlog("origin width : %d ,  %d ,  dest : %d,  %d", avframe->width, avframe->height,
-           dest_width, dest_height);
+          dest_width, dest_height);
 
     destFrame->format = AV_PIX_FMT_YUV420P;
     destFrame->width = dest_width;
@@ -410,9 +410,7 @@ void Decoder::scalAndSaveFrame(AVFrame *avframe, double playTime) {
 
 
 vector<string> Decoder::createVideoThumbs() {
-
     v_path_results.clear();
-
     AVPacket avPacket;
     int ret = -1;
     //seek 到0位置，解码获取所有的图片，并保存
@@ -421,9 +419,7 @@ vector<string> Decoder::createVideoThumbs() {
     if (ret < 0) {
         fprintf(stderr, "seek file  error \n");
     }
-
     avcodec_flush_buffers(vCodecCtx);
-
     //1秒内抽取10帧图片，直到最后
     while (timedIndex < 31) {
         ret = av_read_frame(mInputFile->fmt_ctx, &avPacket);
@@ -434,17 +430,14 @@ vector<string> Decoder::createVideoThumbs() {
             fprintf(stderr, "av read frame faile %d \n", AVERROR(ret));
             break;
         }
-
         if (avPacket.stream_index != videoStreamIndex) {
             continue;
         }
-
         ret = avcodec_send_packet(vCodecCtx, &avPacket);
         if (ret < 0) {
             fprintf(stderr, "error  send package \n");
             continue;
         }
-
         AVFrame *avframe = av_frame_alloc();
         ret = avcodec_receive_frame(vCodecCtx, avframe);
         if (ret < 0) {
@@ -456,48 +449,37 @@ vector<string> Decoder::createVideoThumbs() {
     }
     push_n_avframe(NULL);
     av_packet_unref(&avPacket);
-
     return v_path_results;
 }
 
-
-void Decoder::preperPlay(){
-    std::thread(th_read_packet);
-    std::thread(th_decode_audio_packet());
-    std::thread(th_decode_video_packet());
-
-
-//    pthread_t  t;
-//    pthread_create(&t, NULL, th_read_packet(), NULL);
-
-//    std::thread th;
-//    th = std::thread(th_read_packet());
+void Decoder::setPlayState(VideoState *state) {
+    this->videoState = state;
 }
 
 
-//void th_read_packet(){
-//
-//}
-
-void Decoder::th_read_packet(){
+static void pth_read_packet(void *args) {
+    FFlog("this is a read packet  thread");
+    Decoder *decoder = static_cast<Decoder *>(args);
 
     int start = 0;
     int ret = -1;
-    AVRational time_base = videoStream->time_base;
-    int64_t seekPos = start / av_q2d(time_base);
+    for (;;) {
 
-    ret = avformat_seek_file(mInputFile->fmt_ctx, videoStreamIndex, INT64_MIN, seekPos, seekPos,
-                             AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME);
+        if (decoder->videoState && decoder->videoState->video_seek_flag) {
+            AVRational time_base = decoder->videoStream->time_base;
+            int64_t seekPos = start / av_q2d(time_base);
 
-    avcodec_flush_buffers(vCodecCtx);
+            ret = avformat_seek_file(decoder->mInputFile->fmt_ctx, decoder->videoStreamIndex, INT64_MIN,
+                                     seekPos, seekPos,
+                                     AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME);
+            if (ret < 0) {
+                fprintf(stderr, "av_seek_frame  faile \n");
+            }
 
-    if (ret < 0) {
-        fprintf(stderr, "av_seek_frame  faile \n");
-    }
+        }
 
-    while (1){
-        AVPacket* avPacket = av_packet_alloc();
-        ret = av_read_frame(mInputFile->fmt_ctx, avPacket);
+        AVPacket *avPacket = av_packet_alloc();
+        ret = av_read_frame(decoder->mInputFile->fmt_ctx, avPacket);
         if (AVERROR(ret) == AVERROR_EOF) {
             fprintf(stderr, "av read frame faile %d \n", AVERROR(ret));
             break;
@@ -506,22 +488,30 @@ void Decoder::th_read_packet(){
             break;
         }
 
-        if (avPacket->stream_index != videoStreamIndex) {
+        if (avPacket->stream_index != decoder->videoStreamIndex) {
             continue;
         }
 
-//        std::unique_lock<std::mutex> lck(video_pkg_list_mutex);
-//        video_cond.wait_for(lck,std::chrono::seconds(1))==std::cv_status::timeout);
-//        this->videoPacketList.push_back(avPacket);
-//        video_pkg_list_mutex.unlock();
+        if(decoder->videoPacketList.size() >= MAX_AUDIO_PACKET_LIST_SIZE ){
+            struct timeval now;
+            struct timespec wtime;
+            //阻塞几秒中
+            gettimeofday(&now, NULL);
+            wtime.tv_sec = now.tv_sec + 2;
+            wtime.tv_nsec = now.tv_usec * 1000;
+            pthread_cond_timedwait(decoder->mutex_video_list_cond, &decoder->mutex_video_list, &wtime);
 
+        }
+        //添加解码
+        pthread_mutex_lock(&decoder->mutex_video_list);
+        decoder->videoPacketList.push_back(avPacket);
+        pthread_mutex_unlock(&decoder->mutex_video_list);
     }
-
 }
 
 
-void Decoder::th_decode_video_packet(){
-    while (1){
+static void th_decode_video_packet() {
+    while (1) {
 
 //        int ret = -1;
 //        ret = avcodec_send_packet(vCodecCtx, &avPacket);
@@ -544,13 +534,22 @@ void Decoder::th_decode_video_packet(){
 //            int dest_width = avframe->width / cut;
 //            int dest_height = avframe->height / cut;
 //            char *tmpData;
-        }
+    }
 
 
 }
 
-void Decoder::th_decode_audio_packet(){
+static void th_decode_audio_packet() {
 
+}
+
+
+void Decoder::preperPlay() {
+    pthread_create(&th_read, NULL, reinterpret_cast<void *(*)(void *)>(pth_read_packet), this);
+    pthread_create(&th_decode_audio, NULL, reinterpret_cast<void *(*)(void *)>(pth_read_packet),
+                   this);
+    pthread_create(&th_decode_video, NULL, reinterpret_cast<void *(*)(void *)>(pth_read_packet),
+                   this);
 }
 
 

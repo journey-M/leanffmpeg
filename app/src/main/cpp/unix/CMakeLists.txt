@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.4.1)
 
 project(ffsdk)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/../src)
 link_directories( ${CMAKE_SOURCE_DIR}/libs/)
@@ -15,7 +16,6 @@ pkg_search_module(SDL2 REQUIRED sdl2)
 message("libs sdl2 folder : "${SDL2_LIBRARIES})
 
 # add_library(yuv STATIC yuv)
-add_library(InputFile ../src/InputFile.cpp)
-add_library(Decoder ../src/Decoder.cpp ../src/Player.cpp)
+add_library(Decoder ../src/InputFile.cpp ../src/Decoder.cpp ../src/Player.cpp ../src/SafeVector.cpp  ../src/VideoState.cpp)
 add_executable(a main.cpp)
-target_link_libraries(a PUBLIC InputFile Decoder jpeg avcodec avutil avformat avfilter swresample swscale yuv pthread ${SDL2_LIBRARIES})
+target_link_libraries(a PUBLIC Decoder jpeg avcodec avutil avformat avfilter swresample swscale yuv pthread ${SDL2_LIBRARIES})

@@ -40,6 +40,15 @@ void Player:: setTimeStart(float start){
     this->time_start = start;
 }
 
+void Player::preper(){
+    map<InputFile*,Decoder*> ::iterator itor;
+    itor = decoder_maps.begin();
+    while (itor != decoder_maps.end()){
+        itor->second->preperPlay();
+        itor++;
+    }
+}
+
 
 int Player::play() {
 //    if (isPlaying) {

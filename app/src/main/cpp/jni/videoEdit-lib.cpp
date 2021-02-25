@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <android/bitmap.h>
 #include "../src/Decoder.h"
+#include "../src/Player.h"
 
 extern "C" {
 #include "libavcodec/avcodec.h"
@@ -18,6 +19,7 @@ extern "C" {
 
 Decoder *decoder;
 InputFile *inputFile;
+Player * player;
 
 
 extern "C"
@@ -158,10 +160,10 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_gwj_dev_ffmpeg_videoEdit_VideoAPI_play(JNIEnv *env, jobject thiz, jfloat time) {
 
-    if (!decoder) {
-        return;
-    }
-//    decoder->
+    player = new Player();
+    player->addInputFile(inputFile);
+    player->preper();
+    player->play();
 
 }
 

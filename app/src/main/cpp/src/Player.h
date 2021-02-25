@@ -4,6 +4,7 @@
 
 #include "InputFile.h"
 #include "Decoder.h"
+#include "VideoState.h"
 #include <thread>
 #include <map>
 
@@ -19,10 +20,6 @@ struct Clock {
     double pts;
 };
 
-struct PlayerState {
-    Clock videoClock;
-    Clock audioClock;
-};
 
 struct PlayCallback {
     int (*renderVideo)();
@@ -35,6 +32,10 @@ public:
     PlayCallback *stCallback;
 
     vector<InputFile *> inputs_files;
+
+
+    VideoState* state;
+
 
     Player();
 
@@ -55,6 +56,8 @@ public:
     void setCallback(PlayCallback *scallback);
 
     void seekTimeLine();
+
+    void preper();
 
 
 private:

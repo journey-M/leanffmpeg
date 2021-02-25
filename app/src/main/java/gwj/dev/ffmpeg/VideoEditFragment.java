@@ -113,7 +113,7 @@ public class VideoEditFragment extends Fragment implements View.OnClickListener 
   }
 
   private void play() {
-    //videoAPI.openVideoFile()
+    videoAPI.play(0);
   }
 
   private void loadVideoInfos(){

@@ -2,10 +2,13 @@
 #define _H_DECODER_H_
 
 #include "InputFile.h"
+#include "VideoState.h"
+#include "SafeVector.h"
 #include <cstdint>
 #include <vector>
 #include <thread>
 #include <mutex>
+
 
 extern "C" {
 #include <libyuv.h>
@@ -35,7 +38,6 @@ class Decoder {
 
 public :
     InputFile *mInputFile;
-    //add for test
     int videoStreamIndex = -1;
     AVStream *videoStream = NULL;
     int audioStreamIndex = -1;
@@ -61,14 +63,20 @@ public :
     /**
      *视频相关线程和栈
      */
-    #define  max_audio_packet_list_size  5
-    #define  max_video_packet_list_size  20
-     vector<AVPacket*> videoPacketList;
-     vector<AVPacket*> audioPacketList;
-     std::thread th_read_pkg;
-     std::thread th_decode_video_pkg;
-     std::thread th_decode_audio_pkg;
+    pthread_t th_read;
+    pthread_t th_decode_video;
+    pthread_t th_decode_audio;
+    #define  MAX_AUDIO_PACKET_LIST_SIZE  20
+    #define  MAX_VIDEO_PACKET_LIST_SIZE  30
+    SafeVector<AVPacket *> videoPacketList;
+    SafeVector<AVPacket *> audioPacketList;
 
+    //多线程的锁
+    pthread_cond_t *mutex_video_list_cond = PTHREAD_COND_INITIALIZER;
+    pthread_cond_t mutex_audio_list_cond = PTHREAD_COND_INITIALIZER;
+
+    //视频状态
+    VideoState *videoState;
 
 
     Decoder(InputFile *inputFile);
@@ -80,6 +88,7 @@ public :
 
     vector<string> createVideoThumbs();
 
+    void setPlayState(VideoState * state);
 
     void push_n_avframe(AVFrame * avFrame);
 
@@ -112,12 +121,6 @@ private:
     condition_variable audio_cond;
     mutex audio_pkg_list_mutex;
 
-    //读包线程
-    void th_read_packet();
-    //
-    void th_decode_video_packet();
-
-    void th_decode_audio_packet();
 
 };
 

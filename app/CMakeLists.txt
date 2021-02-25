@@ -15,6 +15,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 #SET(CMAKE_ASM_FLAGS "${CFLAGS} ${ASM_OPTIONS}" )
 
 add_definitions(-Dandroid)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 
 #设置安装的目录
@@ -197,6 +198,8 @@ add_library(
         src/main/cpp/jni/videoEdit-lib.cpp
         src/main/cpp/src/Decoder.cpp
         src/main/cpp/src/InputFile.cpp
+        src/main/cpp/src/VideoState.cpp
+        src/main/cpp/src/SafeVector.cpp
         src/main/cpp/src/Player.cpp
 )
 
