@@ -66,13 +66,11 @@ public :
     pthread_t th_read;
     pthread_t th_decode_video;
     pthread_t th_decode_audio;
-    #define  MAX_AUDIO_PACKET_LIST_SIZE  20
-    #define  MAX_VIDEO_PACKET_LIST_SIZE  30
     SafeVector<AVPacket *> videoPacketList;
     SafeVector<AVPacket *> audioPacketList;
 
     //多线程的锁
-    pthread_cond_t *mutex_video_list_cond = PTHREAD_COND_INITIALIZER;
+    pthread_cond_t *mutex_read_th_cond = PTHREAD_COND_INITIALIZER;
     pthread_cond_t mutex_audio_list_cond = PTHREAD_COND_INITIALIZER;
 
     //视频状态

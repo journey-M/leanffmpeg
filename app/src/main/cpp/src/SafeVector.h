@@ -35,6 +35,8 @@ public:
 
     int getSize();
 
+    int enough();
+
 
 };
 

@@ -459,6 +459,7 @@ void Decoder::setPlayState(VideoState *state) {
 
 static void pth_read_packet(void *args) {
     FFlog("this is a read packet  thread");
+    pthread_mutex_t mutex_read;
     Decoder *decoder = static_cast<Decoder *>(args);
 
     int start = 0;
@@ -492,51 +493,51 @@ static void pth_read_packet(void *args) {
             continue;
         }
 
-        if(decoder->videoPacketList.size() >= MAX_AUDIO_PACKET_LIST_SIZE ){
+        if(decoder->videoPacketList.enough()){
             struct timeval now;
             struct timespec wtime;
             //阻塞几秒中
             gettimeofday(&now, NULL);
             wtime.tv_sec = now.tv_sec + 2;
-            wtime.tv_nsec = now.tv_usec * 1000;
-            pthread_cond_timedwait(decoder->mutex_video_list_cond, &decoder->mutex_video_list, &wtime);
-
+            wtime.tv_nsec = (now.tv_usec + 10* 1000)* 1000;
+            pthread_mutex_lock(&mutex_read);
+            pthread_cond_timedwait(decoder->mutex_read_th_cond, &mutex_read, &wtime);
+            pthread_mutex_unlock(&mutex_read);
         }
         //添加解码
-        pthread_mutex_lock(&decoder->mutex_video_list);
-        decoder->videoPacketList.push_back(avPacket);
-        pthread_mutex_unlock(&decoder->mutex_video_list);
+        decoder->videoPacketList.push_value(avPacket);
     }
 }
 
 
 static void th_decode_video_packet() {
-    while (1) {
+    for (;;) {
 
-//        int ret = -1;
-//        ret = avcodec_send_packet(vCodecCtx, &avPacket);
-//        if (ret < 0) {
-//            fprintf(stderr, "error  send package \n");
-//            continue;
-//        }
-//
-//        AVFrame *avframe = av_frame_alloc();
-//        ret = avcodec_receive_frame(vCodecCtx, avframe);
-//        if (ret < 0) {
-//            fprintf(stderr, "recive error \n");
-//            continue;
-//        } else {
-//            fprintf(stderr, "success receive frame \n");
-//            fprintf(stderr, " linesize : : %d, %d %d %d \n",
-//                    avframe->linesize[0], avframe->linesize[1],
-//                    avframe->linesize[2], avframe->linesize[3]);
-//
-//            int dest_width = avframe->width / cut;
-//            int dest_height = avframe->height / cut;
-//            char *tmpData;
+        int ret = -1;
+        ret = avcodec_send_packet(vCodecCtx, &avPacket);
+        if (ret < 0) {
+            fprintf(stderr, "error  send package \n");
+            continue;
+        }
+
+        AVFrame *avframe = av_frame_alloc();
+        ret = avcodec_receive_frame(vCodecCtx, avframe);
+        if (ret < 0) {
+            fprintf(stderr, "recive error \n");
+            continue;
+        } else {
+            fprintf(stderr, "success receive frame \n");
+            fprintf(stderr, " linesize : : %d, %d %d %d \n",
+                    avframe->linesize[0], avframe->linesize[1],
+                    avframe->linesize[2], avframe->linesize[3]);
+
+            int dest_width = avframe->width / cut;
+            int dest_height = avframe->height / cut;
+            char *tmpData;
+        }
+
+
     }
-
-
 }
 
 static void th_decode_audio_packet() {

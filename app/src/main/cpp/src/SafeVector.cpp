@@ -28,4 +28,7 @@ template<class T> int SafeVector<T>::getSize(){
     return elems.size();
 }
 
+template<class T> int SafeVector<T>::enough(){
+  return elems.size() > 20;
+}
 
