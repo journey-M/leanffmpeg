@@ -1,7 +1,34 @@
 #include "Player.h"
 
+static pthread_t  pid;
+static int quit = 0;
+static void render_thread_start(void *args){
+
+    FFlog("render_thread_start ...");
+    Player* player = static_cast<Player*>(args);
+
+    while (!quit){
+        //休眠1秒
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        map<InputFile*,Decoder*> ::iterator itor;
+        itor = player->decoder_maps.begin();
+        while (itor != player->decoder_maps.end()){
+            Frame *frame = itor->second->getCurrentFrame();
+            if(frame){
+                //显示到屏幕上
+                if(player->call_back){
+                    player->call_back(frame->srcFrame);
+                }
+
+            }
+            itor++;
+        }
+    }
+}
+
 
 Player::Player() {
+    pthread_create(&pid,NULL,reinterpret_cast<void *(*)(void *)>(render_thread_start) ,this);
 }
 
 Player::~Player() {
@@ -40,7 +67,8 @@ void Player:: setTimeStart(float start){
     this->time_start = start;
 }
 
-void Player::preper(){
+void Player::preper(void (*call_b)(AVFrame* frams)){
+    this->call_back = call_b;
     map<InputFile*,Decoder*> ::iterator itor;
     itor = decoder_maps.begin();
     while (itor != decoder_maps.end()){

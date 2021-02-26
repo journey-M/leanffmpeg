@@ -2,6 +2,7 @@
 #define _H__PLAYER__H_
 
 
+#include "Log.h"
 #include "InputFile.h"
 #include "Decoder.h"
 #include "VideoState.h"
@@ -29,6 +30,9 @@ struct PlayCallback {
 
 class Player {
 public:
+    void (*call_back)(AVFrame* frames) = NULL;
+    map<InputFile*, Decoder*> decoder_maps;
+
     PlayCallback *stCallback;
 
     vector<InputFile *> inputs_files;
@@ -57,11 +61,10 @@ public:
 
     void seekTimeLine();
 
-    void preper();
+    void preper(void (*call_back)(AVFrame* frams));
 
 
 private:
-    map<InputFile*, Decoder*> decoder_maps;
 
     float time_start = 0.0f;
 

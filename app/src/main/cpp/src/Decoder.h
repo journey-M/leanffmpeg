@@ -34,6 +34,17 @@ struct FrameImage {
     char *buffer;
 };
 
+//本地保存的
+struct Frame{
+    AVFrame *srcFrame;
+    int width ;
+    int height;
+    int format;
+    double pts;
+    double duration;
+    int64_t pos;
+};
+
 class Decoder {
 
 public :
@@ -68,13 +79,26 @@ public :
     pthread_t th_decode_audio;
     SafeVector<AVPacket *> videoPacketList;
     SafeVector<AVPacket *> audioPacketList;
+    #define  MAX_DISPLAY_FRAMS  16
+    vector<Frame*> display_list;
 
-    //多线程的锁
-    pthread_cond_t *mutex_read_th_cond = PTHREAD_COND_INITIALIZER;
-    pthread_cond_t mutex_audio_list_cond = PTHREAD_COND_INITIALIZER;
+    //read线程锁
+    pthread_mutex_t mutex_read_th = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t cond_read_th = PTHREAD_COND_INITIALIZER;
+
+    //缓存Frame写入锁
+    pthread_mutex_t mutex_frame_list_write = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t cond_frame_list_write = PTHREAD_COND_INITIALIZER;
+
+    pthread_cond_t cond_audio_list = PTHREAD_COND_INITIALIZER;
+
+    AVPacket current_video_pkt;
+    AVPacket current_audio_pkt;
+    AVPacket flush_pkt;
+
 
     //视频状态
-    VideoState *videoState;
+    VideoState *videoState = NULL;
 
 
     Decoder(InputFile *inputFile);
@@ -92,12 +116,26 @@ public :
 
     void scalAndSaveFrame(AVFrame * avFrame,  double playTime);
 
+    int queue_picture(AVFrame *src_frame, double pts, double duration, int64_t pos);
+
+    int pop_picture(Frame *frame);
+
 
     /**
      * 播放相关
      */
     void preperPlay();
 
+    Frame* getCurrentFrame();
+
+    /**
+     * 视频packet解码相关
+     * @return
+     */
+
+    int decoder_decode_frame(AVFrame*, AVCodec* codec, AVCodecContext *codecCtx, SafeVector<AVPacket*> queue);
+
+    int get_video_frame(AVFrame* frame);
 
 
 private:

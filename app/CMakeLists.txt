@@ -199,7 +199,6 @@ add_library(
         src/main/cpp/src/Decoder.cpp
         src/main/cpp/src/InputFile.cpp
         src/main/cpp/src/VideoState.cpp
-        src/main/cpp/src/SafeVector.cpp
         src/main/cpp/src/Player.cpp
 )
 

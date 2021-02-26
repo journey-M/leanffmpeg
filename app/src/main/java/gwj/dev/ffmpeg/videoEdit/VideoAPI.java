@@ -2,10 +2,7 @@ package gwj.dev.ffmpeg.videoEdit;
 
 import android.graphics.Bitmap;
 import android.view.Surface;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import java.util.ArrayList;
-import java.util.List;
 
 public class VideoAPI {
 
@@ -30,4 +27,7 @@ public class VideoAPI {
   public native ArrayList<String> createThumbs(String vPath, String outPath);
 
   public native void play(float time);
+
+ public native void realTimePreview(Surface surface);
+
 }

@@ -113,7 +113,8 @@ public class VideoEditFragment extends Fragment implements View.OnClickListener 
   }
 
   private void play() {
-    videoAPI.play(0);
+    //videoAPI.play(0);
+    videoAPI.realTimePreview(surfacePreview.getHolder().getSurface());
   }
 
   private void loadVideoInfos(){
