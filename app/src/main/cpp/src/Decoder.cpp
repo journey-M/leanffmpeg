@@ -2,6 +2,7 @@
 #include "libyuv/convert_argb.h"
 #include <cstdio>
 #include <cstdlib>
+#include <libavcodec/codec.h>
 #include <libavutil/error.h>
 #include <string>
 #include "Log.h"
@@ -17,6 +18,7 @@ Decoder::Decoder(InputFile *input) {
     findAudioStream();
     findVideoStream();
     initVideoDecoder();
+    initAudioDecoder();
 }
 
 int Decoder::getVideoImages(Options *opt, vector<FrameImage *> *result, int max) {
@@ -238,6 +240,36 @@ int Decoder::initVideoDecoder() {
 
     return 0;
 }
+
+int Decoder::initAudioDecoder(){
+    audioCodec = avcodec_find_decoder(audioStream->codecpar->codec_id);
+    if(!audioCodec){
+        fprintf(stderr, "audioCodec is not find");
+        return -1;
+    }
+    aCodecCtx = avcodec_alloc_context3(audioCodec);
+    if (!aCodecCtx) {
+        fprintf(stderr, "audio code ctx is not alloc");
+        return -1;
+    }
+    
+    int ret = avcodec_parameters_to_context(aCodecCtx, audioStream->codecpar);
+    if (ret < 0) {
+        fprintf(stderr, "faile to copy codec params to decoder context \n");
+        return -1;
+    }
+
+    //init decoders
+    ret = avcodec_open2(aCodecCtx, audioCodec, NULL);
+    if (ret < 0) {
+        fprintf(stderr, "Failed to open audioCodec /n");
+        return -1;
+    }
+
+    return 0;
+
+}
+
 
 int Decoder::findVideoStream() {
     if (!videoStream) {

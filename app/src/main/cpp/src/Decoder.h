@@ -155,6 +155,8 @@ private:
 
     int initVideoDecoder();
 
+    int initAudioDecoder();
+
 
 
 //    condition_variable video_cond;

@@ -21,7 +21,7 @@ class SafeVector {
 
 private:
     std::vector<T> elems;     // 元素
-    std::string TAG;
+    char* TAG;
     pthread_mutex_t mutex_list = PTHREAD_MUTEX_INITIALIZER;
 
 
@@ -46,7 +46,7 @@ public:
 
     int isDecodeing();
 
-    void setTag(std::string tag);
+    void setTag(char* tag);
 
 };
 
@@ -78,7 +78,7 @@ template<typename T> T SafeVector<T>::pop_value() {
 
 template<typename T> int SafeVector<T>::getSize(){
     int size = elems.size();
-    FFlog("%s size = %d \n", TAG.c_str(), size);
+    FFlog("%s size = %d \n", TAG, size);
     return size;
 }
 
@@ -95,7 +95,7 @@ template<typename T> int SafeVector<T>::isDecodeing(){
     return 0;
 }
 
-template<typename T> void SafeVector<T>::setTag(std::string tag){
+template<typename T> void SafeVector<T>::setTag(char* tag){
     TAG = tag;
 }
 

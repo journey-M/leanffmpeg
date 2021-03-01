@@ -1,7 +1,10 @@
 file build/a
-set args ~/VID_20191005_150211.mp4
+set args ../cc.mp4
 b main.cpp:53
 b main.cpp:82
+b main.cpp:93
 b Decoder.cpp:811
 b Decoder.cpp:659
+b Player.cpp:8
+b Decoder.cpp:536
 r
