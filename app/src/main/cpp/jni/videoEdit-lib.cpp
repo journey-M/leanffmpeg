@@ -237,11 +237,15 @@ static void frame_call_back(AVFrame *avframe){
 #endif
 
     FrameImage * frameImage = (FrameImage *) malloc(sizeof(struct FrameImage));
+    frameImage->width = dest_width;
+    frameImage->height = dest_height;
+    frameImage->buffer = tmpData;
 
     ANativeWindow_setBuffersGeometry(nativeWindow, frameImage->width,
                                      frameImage->height, WINDOW_FORMAT_RGBA_8888);
     ANativeWindow_Buffer outBuffer;
-    if (ANativeWindow_lock(nativeWindow, &outBuffer, 0) == 0) {
+    int ret = ANativeWindow_lock(nativeWindow, &outBuffer, 0);
+    if (ret == 0) {
 
         uint8_t *dst_data = static_cast<uint8_t *>(outBuffer.bits);
 

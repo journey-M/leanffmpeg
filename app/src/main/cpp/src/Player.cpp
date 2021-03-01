@@ -9,12 +9,12 @@ static void render_thread_start(void *args){
 
     while (!quit){
         //休眠1秒
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds (25));
         map<InputFile*,Decoder*> ::iterator itor;
         itor = player->decoder_maps.begin();
         while (itor != player->decoder_maps.end()){
             Frame *frame = itor->second->getCurrentFrame();
-            if(frame){
+            if(frame != NULL){
                 //显示到屏幕上
                 if(player->call_back){
                     player->call_back(frame->srcFrame);

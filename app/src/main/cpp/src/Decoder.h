@@ -80,6 +80,7 @@ public :
     SafeVector<AVPacket *> videoPacketList;
     SafeVector<AVPacket *> audioPacketList;
     #define  MAX_DISPLAY_FRAMS  16
+    #define  MIN_DISPLAY_FRAMS  8
     vector<Frame*> display_list;
 
     //read线程锁
@@ -118,7 +119,7 @@ public :
 
     int queue_picture(AVFrame *src_frame, double pts, double duration, int64_t pos);
 
-    int pop_picture(Frame *frame);
+    int pop_picture(Frame **frame);
 
 
     /**
@@ -133,7 +134,7 @@ public :
      * @return
      */
 
-    int decoder_decode_frame(AVFrame*, AVCodec* codec, AVCodecContext *codecCtx, SafeVector<AVPacket*> queue);
+    int decoder_decode_frame(AVFrame*, AVCodec* codec, AVCodecContext *codecCtx, SafeVector<AVPacket*>* queue);
 
     int get_video_frame(AVFrame* frame);
 

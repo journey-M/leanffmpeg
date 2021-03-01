@@ -3,6 +3,7 @@
 
 #include "InputFile.h"
 #include "VideoState.h"
+#include "Log.h"
 #include <cstdint>
 #include <vector>
 #include <thread>
@@ -14,11 +15,13 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 }
-template <class T>
+template <typename T>
+//typedef T AVPacket* ;
 class SafeVector {
 
 private:
     std::vector<T> elems;     // 元素
+    std::string TAG;
     pthread_mutex_t mutex_list = PTHREAD_MUTEX_INITIALIZER;
 
 
@@ -39,47 +42,61 @@ public:
 
     int enough();
 
+    int not_enough();
+
     int isDecodeing();
+
+    void setTag(std::string tag);
 
 };
 
-template<class T> SafeVector<T>::SafeVector() {
+template<typename T> SafeVector<T>::SafeVector() {
+}
+
+template<typename T> SafeVector<T>::~SafeVector() {
 
 }
 
-template<class T> SafeVector<T>::~SafeVector() {
-
-}
-
-template<class T> void SafeVector<T>::push_value(T t) {
+template<typename T> void SafeVector<T>::push_value(T t) {
     pthread_mutex_lock(&mutex_list);
     elems.push_back(t);
     pthread_mutex_unlock(&mutex_list);
 }
 
-template<class T> T SafeVector<T>::pop_value() {
+template<typename T> T SafeVector<T>::pop_value() {
     T t;
     if (elems.size() == 0){
         return NULL;
     }
     pthread_mutex_lock(&mutex_list);
     t = elems.front();
+    elems.erase(elems.begin());
     pthread_mutex_unlock(&mutex_list);
     return t;
 }
 
 
-template<class T> int SafeVector<T>::getSize(){
-    return elems.size();
+template<typename T> int SafeVector<T>::getSize(){
+    int size = elems.size();
+    FFlog("%s size = %d \n", TAG.c_str(), size);
+    return size;
 }
 
-template<class T> int SafeVector<T>::enough(){
-    return elems.size() > 20;
+template<typename T> int SafeVector<T>::enough(){
+    return getSize() > 20;
 }
 
 
-template<class T> int SafeVector<T>::isDecodeing(){
+template<typename T> int SafeVector<T>::not_enough(){
+    return getSize() < 10;
+}
+
+template<typename T> int SafeVector<T>::isDecodeing(){
     return 0;
+}
+
+template<typename T> void SafeVector<T>::setTag(std::string tag){
+    TAG = tag;
 }
 
 
