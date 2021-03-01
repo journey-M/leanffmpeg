@@ -87,14 +87,14 @@ public :
     pthread_mutex_t mutex_read_th = PTHREAD_MUTEX_INITIALIZER;
     pthread_cond_t cond_read_th = PTHREAD_COND_INITIALIZER;
 
-    //缓存Frame写入锁
-    pthread_mutex_t mutex_frame_list_write = PTHREAD_MUTEX_INITIALIZER;
-    pthread_cond_t cond_frame_list_write = PTHREAD_COND_INITIALIZER;
+    //缓存Video Frame写入锁
+    pthread_mutex_t mutex_video_frame_list = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t cond_video_frame_list = PTHREAD_COND_INITIALIZER;
 
-    pthread_cond_t cond_audio_list = PTHREAD_COND_INITIALIZER;
+    //缓存Audio Frame写入锁
+    pthread_mutex_t mutex_audio_frame_list = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t cond_audio_frame_list = PTHREAD_COND_INITIALIZER;
 
-    AVPacket current_video_pkt;
-    AVPacket current_audio_pkt;
     AVPacket flush_pkt;
 
 
@@ -120,6 +120,10 @@ public :
     int queue_picture(AVFrame *src_frame, double pts, double duration, int64_t pos);
 
     int pop_picture(Frame **frame);
+
+    int queue_sample(AVFrame *src_frame, double pts, double duration, int64_t pos);
+
+    int pop_sample(Frame **frame);
 
 
     /**

@@ -1,7 +1,14 @@
 package gwj.dev.ffmpeg;
 
 import android.graphics.Bitmap;
+import android.media.AudioAttributes;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioTrack;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.SurfaceView;
@@ -11,11 +18,15 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import gwj.dev.ffmpeg.videoEdit.VPreviewContainer;
 import gwj.dev.ffmpeg.videoEdit.VideoAPI;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class VideoEditFragment extends Fragment implements View.OnClickListener {
@@ -28,6 +39,9 @@ public class VideoEditFragment extends Fragment implements View.OnClickListener 
   private SeekBar progressBar;
   private Button btnthumbs;
   private Button btn_jiazai;
+
+  AudioTrack audioTrack;
+
   @Nullable
   @Override
   public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -69,6 +83,11 @@ public class VideoEditFragment extends Fragment implements View.OnClickListener 
   }
 
   private void init() {
+    init_audio_track_player();
+
+
+
+    //编辑器初始化
     videoAPI = new VideoAPI();
 
     //videoAPI.openVideoFile("/sdcard/bb.mp4");
@@ -76,6 +95,59 @@ public class VideoEditFragment extends Fragment implements View.OnClickListener 
     //videoAPI.openVideoFile("/sdcard/a.mp4");
 
 
+  }
+
+  private void init_audio_track_player(){
+    // ************ 流播放 ************
+    int SAMPLE_RATE_INHZ = 48000;
+    int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
+    final int minBufferSize = AudioTrack.getMinBufferSize(SAMPLE_RATE_INHZ,
+        AudioFormat.CHANNEL_OUT_MONO, AUDIO_FORMAT);
+    // 创建 AudioTrack 对象
+    audioTrack = new AudioTrack(
+        new AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+            .build(),
+        new AudioFormat.Builder().setSampleRate(SAMPLE_RATE_INHZ)
+            .setEncoding(AUDIO_FORMAT)
+            .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+            .build(),
+        minBufferSize,
+        AudioTrack.MODE_STREAM,
+        AudioManager.AUDIO_SESSION_ID_GENERATE
+    );
+    // 检查初始化是否成功
+    if(audioTrack.getState() == AudioTrack.STATE_UNINITIALIZED){
+      Toast.makeText(getActivity(),"AudioTrack初始化失败！",Toast.LENGTH_SHORT).show();
+      return;
+    }
+    // 播放
+    audioTrack.play();
+    //子线程中文件流写入
+    new Handler().post(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          final File file = new File("/sdcard/cc.pcm");
+          FileInputStream fileInputStream = new FileInputStream(file);
+          byte[] tempBuffer = new byte[minBufferSize];
+          while (fileInputStream.available() > 0) {
+            int readCount = fileInputStream.read(tempBuffer);
+            if (readCount == AudioTrack.ERROR_INVALID_OPERATION ||
+                readCount == AudioTrack.ERROR_BAD_VALUE) {
+              continue;
+            }
+            if (readCount != 0 && readCount != -1) {
+              audioTrack.write(tempBuffer, 0, readCount);
+            }
+          }
+          fileInputStream.close();
+        } catch (IOException ioe) {
+          ioe.printStackTrace();
+        }
+      }
+    });
   }
 
   private final String TAG = "VEDIT";
