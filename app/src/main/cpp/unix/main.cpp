@@ -72,6 +72,10 @@ static int seekImageFrame(Decoder *decoder){
   return 0;
 }
 
+static void frame_call_back(AVFrame* frams){
+
+}
+
 int main (int argc, char* argv[]){
 
 	if(argc < 2){
@@ -100,7 +104,7 @@ int main (int argc, char* argv[]){
 	shared_ptr<Player> shPlayer =make_shared<Player>();
 	Player* player = shPlayer.get();
 	player->addInputFile(&inputFile);
-
+	player->preper(frame_call_back);
   player->play();
 
 

@@ -9,7 +9,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/a",
-            "args": ["/home/guoweijie004/VID_20191005_150211.mp4"],
+            "args": ["${workspaceFolder}/../cc.mp4"],
 
         }
     ]

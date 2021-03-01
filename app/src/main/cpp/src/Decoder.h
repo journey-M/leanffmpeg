@@ -152,10 +152,10 @@ private:
 
 
 
-    condition_variable video_cond;
-    mutex video_pkg_list_mutex;
-    condition_variable audio_cond;
-    mutex audio_pkg_list_mutex;
+//    condition_variable video_cond;
+//    mutex video_pkg_list_mutex;
+//    condition_variable audio_cond;
+//    mutex audio_pkg_list_mutex;
 
 
 };
