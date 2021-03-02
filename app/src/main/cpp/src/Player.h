@@ -30,7 +30,9 @@ struct PlayCallback {
 
 class Player {
 public:
-    void (*call_back)(AVFrame* frames) = NULL;
+    void (*display_back)(AVFrame* frames) = NULL;
+    void (* audio_callback)(unsigned char *, int size) = NULL;
+
     map<InputFile*, Decoder*> decoder_maps;
 
     PlayCallback *stCallback;
@@ -61,7 +63,9 @@ public:
 
     void seekTimeLine();
 
-    void preper(void (*call_back)(AVFrame* frams));
+    void preper(void (*display_callback)(AVFrame* frams), void (* audio_callback)(unsigned char *, int size));
+
+    void getBufferData(int* size, uint8_t *data);
 
 
 private:

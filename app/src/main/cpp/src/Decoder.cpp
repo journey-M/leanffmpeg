@@ -2,7 +2,7 @@
 #include "libyuv/convert_argb.h"
 #include <cstdio>
 #include <cstdlib>
-#include <libavcodec/codec.h>
+//#include <libavcodec/codec.h>
 #include <libavutil/error.h>
 #include <string>
 #include "Log.h"
@@ -12,7 +12,7 @@ Decoder::Decoder(InputFile *input) {
 
     av_init_packet(&flush_pkt);
     videoPacketList.setTag("video packet");
-    videoPacketList.setTag("audio packet");
+    audioPacketList.setTag("audio packet");
 
     mInputFile = input;
     findAudioStream();
@@ -493,7 +493,7 @@ void Decoder::setPlayState(VideoState *state) {
 
 int Decoder::queue_picture(AVFrame *src_frame, double pts, double duration, int64_t pos) {
 
-    if (display_list.size() > MAX_DISPLAY_FRAMS) {
+    if (video_display_list.size() > MAX_V_DISPLAY_FRAMS) {
         pthread_mutex_lock(&mutex_video_frame_list);
         pthread_cond_wait(&cond_video_frame_list, &mutex_video_frame_list);
         pthread_mutex_unlock(&mutex_video_frame_list);
@@ -510,24 +510,24 @@ int Decoder::queue_picture(AVFrame *src_frame, double pts, double duration, int6
     av_frame_move_ref(vp->srcFrame, src_frame);
 
     pthread_mutex_lock(&mutex_video_frame_list);
-    display_list.push_back(vp);
-    FFlog("showing frame size = %d \n", display_list.size());
+    video_display_list.push_back(vp);
+    FFlog("showing frame size = %d \n", video_display_list.size());
     pthread_mutex_unlock(&mutex_video_frame_list);
     return 0;
 }
 
 int Decoder::pop_picture(Frame **frame) {
-    if (display_list.size() <= MIN_DISPLAY_FRAMS) {
+    if (video_display_list.size() <= MIN_V_DISPLAY_FRAMS) {
         pthread_mutex_lock(&mutex_video_frame_list);
         pthread_cond_signal(&cond_video_frame_list);
         pthread_mutex_unlock(&mutex_video_frame_list);
     }
-    if (display_list.size() == 0) {
+    if (video_display_list.size() == 0) {
         return 0;
     }
     pthread_mutex_lock(&mutex_video_frame_list);
-    *frame = display_list.front();
-    display_list.erase(display_list.begin());
+    *frame = video_display_list.front();
+    video_display_list.erase(video_display_list.begin());
     pthread_cond_signal(&cond_video_frame_list);
     pthread_mutex_unlock(&mutex_video_frame_list);
     return 1;
@@ -545,11 +545,44 @@ int Decoder::pop_picture(Frame **frame) {
  */
 int Decoder::queue_sample(AVFrame *src_frame, double pts, double duration, int64_t pos){
 
+    if (video_display_list.size() > MAX_A_DISPLAY_FRAMS) {
+        pthread_mutex_lock(&mutex_audio_frame_list);
+        pthread_cond_wait(&cond_audio_frame_list, &mutex_audio_frame_list);
+        pthread_mutex_unlock(&mutex_audio_frame_list);
+    }
+
+    Frame *vp = static_cast<Frame *>(malloc(sizeof(struct Frame)));
+    vp->width = src_frame->width;
+    vp->height = src_frame->height;
+    vp->format = src_frame->format;
+    vp->pts = pts;
+    vp->duration = duration;
+    vp->pos = pos;
+    vp->srcFrame = av_frame_alloc();
+    av_frame_move_ref(vp->srcFrame, src_frame);
+
+    pthread_mutex_lock(&mutex_audio_frame_list);
+    audio_display_list.push_back(vp);
+    FFlog("showing audio frame size = %d \n", audio_display_list.size());
+    pthread_mutex_unlock(&mutex_audio_frame_list);
     return 0;
+
 }
 
 int Decoder::pop_sample(Frame **frame){
-
+    if (audio_display_list.size() <= MIN_A_DISPLAY_FRAMS) {
+        pthread_mutex_lock(&mutex_audio_frame_list);
+        pthread_cond_signal(&cond_audio_frame_list);
+        pthread_mutex_unlock(&mutex_audio_frame_list);
+    }
+    if (audio_display_list.size() == 0) {
+        return 0;
+    }
+    pthread_mutex_lock(&mutex_audio_frame_list);
+    *frame = audio_display_list.front();
+    audio_display_list.erase(audio_display_list.begin());
+    pthread_cond_signal(&cond_audio_frame_list);
+    pthread_mutex_unlock(&mutex_audio_frame_list);
     return 1;
 }
 
@@ -956,7 +989,7 @@ void Decoder::preperPlay() {
 //    pthread_join(th_read, NULL);
 }
 
-Frame *Decoder::getCurrentFrame() {
+Frame *Decoder::getDisplayFrame() {
 
     Frame *frame;
     int ret = pop_picture(&frame);
@@ -966,5 +999,73 @@ Frame *Decoder::getCurrentFrame() {
     }
     return NULL;
 
+}
+
+
+AudioBuffer* Decoder::getAudioData(){
+    int data_size, resampled_data_size;
+    int64_t dec_channel_layout;
+    Frame *af;
+
+    int ret = pop_sample(&af);
+    if(ret > 0){
+        uint64_t out_ch_layout = AV_CH_LAYOUT_MONO;
+        if(swr_ctx == NULL) {
+            swr_ctx = swr_alloc();
+            //重采样设置选项-----------------------------------------------------------start
+            //输入的采样格式
+            enum AVSampleFormat in_sample_fmt = aCodecCtx->sample_fmt;
+            //输出的采样格式
+            enum AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
+            //输入的采样率
+            int in_sample_rate = aCodecCtx->sample_rate;
+            printf("sample rate = %d \n" ,in_sample_rate);
+            //输出的采样率
+            int out_sample_rate = 44100;
+            //输入的声道布局
+            uint64_t in_ch_layout = aCodecCtx->channel_layout;
+            //输出的声道布局
+            //SwrContext 设置参数
+            swr_alloc_set_opts(swr_ctx,out_ch_layout,out_sample_fmt,out_sample_rate,in_ch_layout,in_sample_fmt,in_sample_rate,0,NULL);
+            //初始化SwrContext
+            swr_init(swr_ctx);
+        }
+
+        uint8_t * out_buffer = (uint8_t *) av_malloc(44100 * 2);
+        //    输出采样位数  16位
+        enum AVSampleFormat out_formart=AV_SAMPLE_FMT_S16;
+        //输出的采样率必须与输入相同
+        int out_sample_rate = aCodecCtx->sample_rate;
+
+        AudioBuffer* audioBuffer = static_cast<AudioBuffer *>(malloc(sizeof(struct AudioBuffer)));
+
+        data_size = av_samples_get_buffer_size(NULL, af->srcFrame->channels,
+                                               af->srcFrame->nb_samples,
+                                               static_cast<AVSampleFormat>(af->srcFrame->format), 1);
+
+        swr_convert(swr_ctx , &out_buffer , 2 * 44100 , (const uint8_t **)af->srcFrame->data , af->srcFrame->nb_samples);
+
+        // int swr_convert(struct SwrContext *s, uint8_t **out, int out_count,
+        //                 const uint8_t **in , int in_count);
+
+//        dec_channel_layout =
+//                (af->srcFrame->channel_layout && af->srcFrame->channels == av_get_channel_layout_nb_channels(af->srcFrame->channel_layout)) ?
+//                af->srcFrame->channel_layout : av_get_default_channel_layout(af->srcFrame->channels);
+
+//
+//        AudioBuffer* audioBuffer = static_cast<AudioBuffer *>(malloc(sizeof(struct AudioBuffer)));
+//        data_size = av_samples_get_buffer_size(NULL, af->srcFrame->channels,
+//                                               af->srcFrame->nb_samples,
+//                                               static_cast<AVSampleFormat>(af->srcFrame->format), 1);
+//        uint8_t * out_buffer = (uint8_t *) malloc(af->srcFrame->nb_samples);
+
+        audioBuffer->buffer = out_buffer;
+        audioBuffer->size = data_size;
+
+        av_frame_unref(af->srcFrame);
+        return audioBuffer;
+    }
+
+    return NULL;
 }
 

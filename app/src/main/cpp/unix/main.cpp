@@ -76,6 +76,16 @@ static void frame_call_back(AVFrame* frams){
 
 }
 
+/**
+ * 音频数据的回调
+ * @param data
+ * @param size
+ */
+static void audio_callback(unsigned char* data, int size){
+
+    FFlog("receive  --- data --- size = %d \n", size);
+}
+
 int main (int argc, char* argv[]){
 
 	if(argc < 2){
@@ -104,7 +114,7 @@ int main (int argc, char* argv[]){
 	shared_ptr<Player> shPlayer =make_shared<Player>();
 	Player* player = shPlayer.get();
 	player->addInputFile(&inputFile);
-	player->preper(frame_call_back);
+	player->preper(frame_call_back, audio_callback);
   player->play();
 
 

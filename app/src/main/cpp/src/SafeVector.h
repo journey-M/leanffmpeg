@@ -20,8 +20,8 @@ template <typename T>
 class SafeVector {
 
 private:
-    std::vector<T> elems;     // 元素
-    char* TAG;
+    std::vector<T> *elems;     // 元素
+    char* TAG = "test";
     pthread_mutex_t mutex_list = PTHREAD_MUTEX_INITIALIZER;
 
 
@@ -51,6 +51,7 @@ public:
 };
 
 template<typename T> SafeVector<T>::SafeVector() {
+    elems = new std::vector<T>(30);
 }
 
 template<typename T> SafeVector<T>::~SafeVector() {
@@ -59,25 +60,25 @@ template<typename T> SafeVector<T>::~SafeVector() {
 
 template<typename T> void SafeVector<T>::push_value(T t) {
     pthread_mutex_lock(&mutex_list);
-    elems.push_back(t);
+    elems->push_back(t);
     pthread_mutex_unlock(&mutex_list);
 }
 
 template<typename T> T SafeVector<T>::pop_value() {
     T t;
-    if (elems.size() == 0){
+    if (elems->size() == 0){
         return NULL;
     }
     pthread_mutex_lock(&mutex_list);
-    t = elems.front();
-    elems.erase(elems.begin());
+    t = elems->front();
+    elems->erase(elems->begin());
     pthread_mutex_unlock(&mutex_list);
     return t;
 }
 
 
 template<typename T> int SafeVector<T>::getSize(){
-    int size = elems.size();
+    int size = elems->size();
     FFlog("%s size = %d \n", TAG, size);
     return size;
 }

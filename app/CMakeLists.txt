@@ -208,13 +208,15 @@ target_link_libraries( # Specifies the target library.
         # included in the NDK.
         jnigraphics
         x264
-        avcodec
-        avfilter
         avformat
+        avcodec
         avutil
-        swresample
+        avfilter
         swscale
+        swresample
         yuv
+        OpenSLES
+
         ${log-lib}
         ${android})
 

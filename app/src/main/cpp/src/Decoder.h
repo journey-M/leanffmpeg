@@ -8,6 +8,7 @@
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <libswresample/swresample.h>
 
 
 extern "C" {
@@ -45,6 +46,14 @@ struct Frame{
     int64_t pos;
 };
 
+/**
+ * 音频数据缓存
+ */
+struct AudioBuffer{
+    uint8_t *buffer;
+    int size;
+};
+
 class Decoder {
 
 public :
@@ -79,9 +88,16 @@ public :
     pthread_t th_decode_audio;
     SafeVector<AVPacket *> videoPacketList;
     SafeVector<AVPacket *> audioPacketList;
-    #define  MAX_DISPLAY_FRAMS  16
-    #define  MIN_DISPLAY_FRAMS  8
-    vector<Frame*> display_list;
+    #define  MAX_V_DISPLAY_FRAMS  16
+    #define  MIN_V_DISPLAY_FRAMS  8
+    vector<Frame*> video_display_list;
+
+    //音频解码相关参数
+    #define  MAX_A_DISPLAY_FRAMS  80
+    #define  MIN_A_DISPLAY_FRAMS  30
+    vector<Frame*> audio_display_list;
+    //音频上下文
+    SwrContext *swr_ctx = NULL;
 
     //read线程锁
     pthread_mutex_t mutex_read_th = PTHREAD_MUTEX_INITIALIZER;
@@ -131,7 +147,8 @@ public :
      */
     void preperPlay();
 
-    Frame* getCurrentFrame();
+    Frame* getDisplayFrame();
+    AudioBuffer* getAudioData();
 
     /**
      * 视频packet解码相关

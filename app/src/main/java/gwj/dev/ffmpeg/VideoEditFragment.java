@@ -28,6 +28,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class VideoEditFragment extends Fragment implements View.OnClickListener {
 
@@ -82,6 +84,10 @@ public class VideoEditFragment extends Fragment implements View.OnClickListener 
     return view;
   }
 
+  boolean ispaly = false;
+  int totalSize = 0;
+  private List<byte[]> listBytes = new ArrayList<>();
+
   private void init() {
     init_audio_track_player();
 
@@ -89,6 +95,25 @@ public class VideoEditFragment extends Fragment implements View.OnClickListener 
 
     //编辑器初始化
     videoAPI = new VideoAPI();
+    videoAPI.setListener(new VideoAPI.IAudioDataCallback() {
+      @Override
+      public void onReceiveAudioData(int size, byte[] data) {
+
+        if (totalSize < 4096 * 10){
+          totalSize = totalSize + size;
+          listBytes.add(data);
+          return;
+        }
+        if (audioTrack != null && audioTrack.getState() == AudioTrack.STATE_INITIALIZED && !ispaly){
+          byte[] b = new byte[4096*10];
+          for(int i=0 ; i< listBytes.size(); i++){
+            System.arraycopy(listBytes.get(0), 0, b, i*4096, 4096 );
+            audioTrack.write(b, 0, totalSize);
+            ispaly = true;
+          }
+        }
+      }
+    });
 
     //videoAPI.openVideoFile("/sdcard/bb.mp4");
     videoAPI.openVideoFile("/sdcard/cc.mp4");
@@ -102,21 +127,36 @@ public class VideoEditFragment extends Fragment implements View.OnClickListener 
     int SAMPLE_RATE_INHZ = 48000;
     int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
     final int minBufferSize = AudioTrack.getMinBufferSize(SAMPLE_RATE_INHZ,
-        AudioFormat.CHANNEL_OUT_MONO, AUDIO_FORMAT);
+        AudioFormat.CHANNEL_OUT_STEREO, AUDIO_FORMAT);
     // 创建 AudioTrack 对象
-    audioTrack = new AudioTrack(
-        new AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_MEDIA)
-            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-            .build(),
-        new AudioFormat.Builder().setSampleRate(SAMPLE_RATE_INHZ)
-            .setEncoding(AUDIO_FORMAT)
-            .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-            .build(),
-        minBufferSize,
-        AudioTrack.MODE_STREAM,
-        AudioManager.AUDIO_SESSION_ID_GENERATE
-    );
+    //audioTrack = new AudioTrack(
+    //    new AudioAttributes.Builder()
+    //        .setUsage(AudioAttributes.USAGE_MEDIA)
+    //        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+    //        .build(),
+    //    new AudioFormat.Builder().setSampleRate(SAMPLE_RATE_INHZ)
+    //        .setEncoding(AUDIO_FORMAT)
+    //        .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
+    //        .build(),
+    //    minBufferSize,
+    //    AudioTrack.MODE_STREAM,
+    //    AudioManager.AUDIO_SESSION_ID_GENERATE
+    //);
+
+    int nb_channals = 1;
+    int channaleConfig;//通道数
+    if (nb_channals == 1) {
+      channaleConfig = AudioFormat.CHANNEL_OUT_MONO;
+    } else if (nb_channals == 2) {
+      channaleConfig = AudioFormat.CHANNEL_OUT_STEREO;
+    }else {
+      channaleConfig = AudioFormat.CHANNEL_OUT_MONO;
+    }
+    int buffersize=AudioTrack.getMinBufferSize(SAMPLE_RATE_INHZ,
+        channaleConfig, AudioFormat.ENCODING_PCM_16BIT);
+    audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,SAMPLE_RATE_INHZ,channaleConfig,
+        AudioFormat.ENCODING_PCM_16BIT,buffersize,AudioTrack.MODE_STREAM);
+
     // 检查初始化是否成功
     if(audioTrack.getState() == AudioTrack.STATE_UNINITIALIZED){
       Toast.makeText(getActivity(),"AudioTrack初始化失败！",Toast.LENGTH_SHORT).show();
@@ -125,29 +165,29 @@ public class VideoEditFragment extends Fragment implements View.OnClickListener 
     // 播放
     audioTrack.play();
     //子线程中文件流写入
-    new Handler().post(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          final File file = new File("/sdcard/cc.pcm");
-          FileInputStream fileInputStream = new FileInputStream(file);
-          byte[] tempBuffer = new byte[minBufferSize];
-          while (fileInputStream.available() > 0) {
-            int readCount = fileInputStream.read(tempBuffer);
-            if (readCount == AudioTrack.ERROR_INVALID_OPERATION ||
-                readCount == AudioTrack.ERROR_BAD_VALUE) {
-              continue;
-            }
-            if (readCount != 0 && readCount != -1) {
-              audioTrack.write(tempBuffer, 0, readCount);
-            }
-          }
-          fileInputStream.close();
-        } catch (IOException ioe) {
-          ioe.printStackTrace();
-        }
-      }
-    });
+    //new Handler().post(new Runnable() {
+    //  @Override
+    //  public void run() {
+    //    try {
+    //      final File file = new File("/sdcard/cc.pcm");
+    //      FileInputStream fileInputStream = new FileInputStream(file);
+    //      byte[] tempBuffer = new byte[minBufferSize];
+    //      while (fileInputStream.available() > 0) {
+    //        int readCount = fileInputStream.read(tempBuffer);
+    //        if (readCount == AudioTrack.ERROR_INVALID_OPERATION ||
+    //            readCount == AudioTrack.ERROR_BAD_VALUE) {
+    //          continue;
+    //        }
+    //        if (readCount != 0 && readCount != -1) {
+    //          audioTrack.write(tempBuffer, 0, readCount);
+    //        }
+    //      }
+    //      fileInputStream.close();
+    //    } catch (IOException ioe) {
+    //      ioe.printStackTrace();
+    //    }
+    //  }
+    //});
   }
 
   private final String TAG = "VEDIT";
