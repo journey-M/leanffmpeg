@@ -239,9 +239,9 @@ int Decoder::initVideoDecoder() {
     return 0;
 }
 
-int Decoder::initAudioDecoder(){
+int Decoder::initAudioDecoder() {
     audioCodec = avcodec_find_decoder(audioStream->codecpar->codec_id);
-    if(!audioCodec){
+    if (!audioCodec) {
         fprintf(stderr, "audioCodec is not find");
         return -1;
     }
@@ -250,7 +250,7 @@ int Decoder::initAudioDecoder(){
         fprintf(stderr, "audio code ctx is not alloc");
         return -1;
     }
-    
+
     int ret = avcodec_parameters_to_context(aCodecCtx, audioStream->codecpar);
     if (ret < 0) {
         fprintf(stderr, "faile to copy codec params to decoder context \n");
@@ -509,7 +509,7 @@ int Decoder::queue_picture(AVFrame *src_frame, double pts, double duration, int6
 
     pthread_mutex_lock(&mutex_video_frame_list);
     video_display_list.push_back(vp);
-    FFlog("showing frame size = %d \n", video_display_list.size());
+//    FFlog("showing frame size = %d \n", video_display_list.size());
     pthread_mutex_unlock(&mutex_video_frame_list);
     return 0;
 }
@@ -532,7 +532,6 @@ int Decoder::pop_picture(Frame **frame) {
 }
 
 
-
 /**
  * 缓存音频帧数据
  * @param src_frame
@@ -541,7 +540,9 @@ int Decoder::pop_picture(Frame **frame) {
  * @param pos
  * @return
  */
-int Decoder::queue_sample(AVFrame *src_frame, double pts, double duration, int64_t pos){
+FILE *f = NULL;
+
+int Decoder::queue_sample(AVFrame *src_frame, double pts, double duration, int64_t pos) {
 
     if (video_display_list.size() > MAX_A_DISPLAY_FRAMS) {
         pthread_mutex_lock(&mutex_audio_frame_list);
@@ -549,25 +550,67 @@ int Decoder::queue_sample(AVFrame *src_frame, double pts, double duration, int64
         pthread_mutex_unlock(&mutex_audio_frame_list);
     }
 
-    Frame *vp = static_cast<Frame *>(malloc(sizeof(struct Frame)));
-    vp->width = src_frame->width;
-    vp->height = src_frame->height;
-    vp->format = src_frame->format;
-    vp->pts = pts;
-    vp->duration = duration;
-    vp->pos = pos;
-    vp->srcFrame = av_frame_alloc();
-    av_frame_move_ref(vp->srcFrame, src_frame);
+    //输出的采样率
+    int out_sample_rate = 44100;
+    //输出的声道布局
+    uint64_t out_ch_layout = AV_CH_LAYOUT_MONO;
+    //输出的声道数
+    uint64_t out_chanels = 1;
+    //输出的采样格式
+    enum AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
+
+    if (swr_ctx == NULL) {
+        f = fopen("/sdcard/acc.pcm", "w");
+        swr_ctx = swr_alloc();
+        //重采样设置选项-----------------------------------------------------------start
+        //输入的采样格式
+        enum AVSampleFormat in_sample_fmt = aCodecCtx->sample_fmt;
+
+        //输入的采样率
+        int in_sample_rate = aCodecCtx->sample_rate;
+        printf("sample_rate = %d   nb_samples : %d\n", in_sample_rate, src_frame->nb_samples);
+
+        uint64_t in_ch_layout = aCodecCtx->channel_layout;
+        //输出的声道布局
+        //SwrContext 设置参数
+        swr_alloc_set_opts(swr_ctx, out_ch_layout, out_sample_fmt, out_sample_rate,
+                           in_ch_layout, in_sample_fmt, in_sample_rate, 0, NULL);
+        //初始化SwrContext
+        swr_init(swr_ctx);
+    }
+
+    AudioBufferFrame *audioBuffer = static_cast<AudioBufferFrame *>(malloc(
+            sizeof(struct AudioBufferFrame)));
+
+    int data_size = av_samples_get_buffer_size(NULL, out_chanels,
+                                               src_frame->nb_samples,
+                                               out_sample_fmt, 1);
+    uint8_t *out_buffer = (uint8_t *) malloc(data_size);
+    swr_convert(swr_ctx, &out_buffer, data_size, (const uint8_t **) src_frame->data,
+                src_frame->nb_samples);
+    audioBuffer->buffer = out_buffer;
+    audioBuffer->size = data_size;
+    audioBuffer->format = src_frame->format;
+    audioBuffer->pts = pts;
+    audioBuffer->duration = duration;
+    audioBuffer->pos = pos;
+
+    if (f) {
+        fwrite(out_buffer, 1, data_size, f);
+    }
+
+    //释放原有的AvFrame
+    av_frame_unref(src_frame);
 
     pthread_mutex_lock(&mutex_audio_frame_list);
-    audio_display_list.push_back(vp);
+    audio_display_list.push_back(audioBuffer);
     FFlog("showing audio frame size = %d \n", audio_display_list.size());
     pthread_mutex_unlock(&mutex_audio_frame_list);
     return 0;
-
 }
 
-int Decoder::pop_sample(Frame **frame){
+
+int Decoder::pop_sample(AudioBufferFrame **frame) {
     if (audio_display_list.size() <= MIN_A_DISPLAY_FRAMS) {
         pthread_mutex_lock(&mutex_audio_frame_list);
         pthread_cond_signal(&cond_audio_frame_list);
@@ -751,7 +794,7 @@ static void pth_read_packet(void *args) {
         }
 
 //        || decoder->audioPacketList.enough()
-        if (decoder->videoPacketList.enough() ) {
+        if (decoder->videoPacketList.enough()) {
             struct timeval now;
             struct timespec wtime;
             //阻塞10毫秒
@@ -906,16 +949,18 @@ static void th_decode_audio_packet(void *argv) {
     int ret = 0;
 
     if (!frame)
-        return ;
+        return;
 
     do {
-        if ((got_frame = decoder->decoder_decode_frame(frame, decoder->audioCodec, decoder->aCodecCtx , &decoder->audioPacketList)) < 0){
-          //TODO 结束标志
+        if ((got_frame = decoder->decoder_decode_frame(frame, decoder->audioCodec,
+                                                       decoder->aCodecCtx,
+                                                       &decoder->audioPacketList)) < 0) {
+            //TODO 结束标志
             av_frame_unref(frame);
-            return ;
+            return;
         }
         if (got_frame) {
-            tb = (AVRational){1, frame->sample_rate};
+            tb = (AVRational) {1, frame->sample_rate};
 
 #if CONFIG_AVFILTER
             dec_channel_layout = get_valid_channel_layout(frame->channel_layout, frame->channels);
@@ -956,7 +1001,7 @@ static void th_decode_audio_packet(void *argv) {
             int64_t pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
             int64_t pos = frame->pkt_pos;
 //            af->serial = is->auddec.pkt_serial;
-            double duration = av_q2d((AVRational){frame->nb_samples, frame->sample_rate});
+            double duration = av_q2d((AVRational) {frame->nb_samples, frame->sample_rate});
             decoder->queue_sample(frame, pts, duration, pos);
 
 #if CONFIG_AVFILTER
@@ -1000,70 +1045,14 @@ Frame *Decoder::getDisplayFrame() {
 }
 
 
-AudioBuffer* Decoder::getAudioData(){
-    int data_size, resampled_data_size;
-    int64_t dec_channel_layout;
-    Frame *af;
+AudioBufferFrame *Decoder::getAudioFrame() {
+    AudioBufferFrame *audioBufferFrame;
 
-    int ret = pop_sample(&af);
-    if(ret > 0){
-        uint64_t out_ch_layout = AV_CH_LAYOUT_MONO;
-        if(swr_ctx == NULL) {
-            swr_ctx = swr_alloc();
-            //重采样设置选项-----------------------------------------------------------start
-            //输入的采样格式
-            enum AVSampleFormat in_sample_fmt = aCodecCtx->sample_fmt;
-            //输出的采样格式
-            enum AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
-            //输入的采样率
-            int in_sample_rate = aCodecCtx->sample_rate;
-            printf("sample rate = %d \n" ,in_sample_rate);
-            //输出的采样率
-            int out_sample_rate = 44100;
-            //输入的声道布局
-            uint64_t in_ch_layout = aCodecCtx->channel_layout;
-            //输出的声道布局
-            //SwrContext 设置参数
-            swr_alloc_set_opts(swr_ctx,out_ch_layout,out_sample_fmt,out_sample_rate,in_ch_layout,in_sample_fmt,in_sample_rate,0,NULL);
-            //初始化SwrContext
-            swr_init(swr_ctx);
-        }
-
-        uint8_t * out_buffer = (uint8_t *) av_malloc(44100 * 2);
-        //    输出采样位数  16位
-        enum AVSampleFormat out_formart=AV_SAMPLE_FMT_S16;
-        //输出的采样率必须与输入相同
-        int out_sample_rate = aCodecCtx->sample_rate;
-
-        AudioBuffer* audioBuffer = static_cast<AudioBuffer *>(malloc(sizeof(struct AudioBuffer)));
-
-        data_size = av_samples_get_buffer_size(NULL, af->srcFrame->channels,
-                                               af->srcFrame->nb_samples,
-                                               static_cast<AVSampleFormat>(af->srcFrame->format), 1);
-
-        swr_convert(swr_ctx , &out_buffer , 2 * 44100 , (const uint8_t **)af->srcFrame->data , af->srcFrame->nb_samples);
-
-        // int swr_convert(struct SwrContext *s, uint8_t **out, int out_count,
-        //                 const uint8_t **in , int in_count);
-
-//        dec_channel_layout =
-//                (af->srcFrame->channel_layout && af->srcFrame->channels == av_get_channel_layout_nb_channels(af->srcFrame->channel_layout)) ?
-//                af->srcFrame->channel_layout : av_get_default_channel_layout(af->srcFrame->channels);
-
-//
-//        AudioBuffer* audioBuffer = static_cast<AudioBuffer *>(malloc(sizeof(struct AudioBuffer)));
-//        data_size = av_samples_get_buffer_size(NULL, af->srcFrame->channels,
-//                                               af->srcFrame->nb_samples,
-//                                               static_cast<AVSampleFormat>(af->srcFrame->format), 1);
-//        uint8_t * out_buffer = (uint8_t *) malloc(af->srcFrame->nb_samples);
-
-        audioBuffer->buffer = out_buffer;
-        audioBuffer->size = data_size;
-
-        av_frame_unref(af->srcFrame);
-        return audioBuffer;
+    //TODO 此处应该判断 frame的时间戳
+    int ret = pop_sample(&audioBufferFrame);
+    if (ret > 0) {
+        return audioBufferFrame;
     }
-
     return NULL;
 }
 

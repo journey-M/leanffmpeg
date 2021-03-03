@@ -15,6 +15,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavutil/error.h>
 #include <libswresample/swresample.h>
+#include <libavutil/avutil.h>
 
 #ifdef unix
 #include <jpeglib.h>
@@ -50,9 +51,14 @@ struct Frame{
 /**
  * 音频数据缓存
  */
-struct AudioBuffer{
+struct AudioBufferFrame{
     uint8_t *buffer;
     int size;
+
+    int format;
+    double pts;
+    double duration;
+    int64_t pos;
 };
 
 class Decoder {
@@ -96,7 +102,7 @@ public :
     //音频解码相关参数
     #define  MAX_A_DISPLAY_FRAMS  80
     #define  MIN_A_DISPLAY_FRAMS  30
-    vector<Frame*> audio_display_list;
+    vector<AudioBufferFrame*> audio_display_list;
     //音频上下文
     SwrContext *swr_ctx = NULL;
 
@@ -140,7 +146,7 @@ public :
 
     int queue_sample(AVFrame *src_frame, double pts, double duration, int64_t pos);
 
-    int pop_sample(Frame **frame);
+    int pop_sample(AudioBufferFrame **frame);
 
 
     /**
@@ -149,7 +155,7 @@ public :
     void preperPlay();
 
     Frame* getDisplayFrame();
-    AudioBuffer* getAudioData();
+    AudioBufferFrame* getAudioFrame();
 
     /**
      * 视频packet解码相关

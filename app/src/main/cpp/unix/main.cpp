@@ -7,9 +7,9 @@
 #include <vector>
 #include <stdlib.h>
 #include <unistd.h>
-#include "InputFile.h"
-#include "Decoder.h"
-#include "Player.h"
+#include "src/InputFile.h"
+#include "src/Decoder.h"
+#include "src/Player.h"
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_thread.h>
@@ -136,8 +136,11 @@ static void frame_call_back(AVFrame* avframe){
 
 static Uint8 *pAudio_pos;
 
-static uint8_t audioTmpData[4096 *4];
+static uint8_t audioTmpData[1024 *4];
 static int audioTmpLen = 0;
+
+FILE *  f_r_pcm = NULL;
+
 
 static void fill_audio_buffer(void *userdata, Uint8 * stream, int len){
   SDL_memset(stream, 0, len);
@@ -149,33 +152,50 @@ static void fill_audio_buffer(void *userdata, Uint8 * stream, int len){
 	// SDL_MixAudio(stream, pAudio_pos, len, SDL_MIX_MAXVOLUME);
 	// pAudio_pos += len;
 	// audio_len -= len;
-  FFlog("fill_audio_buffer  --- data --- size = %d  %d\n", len, audioTmpLen);
 
-  if(len >0){
+//  if(len >0){
+//    if(audioTmpLen == 0){
+//      //读取音频数据  填充
+//      if(shPlayer != NULL && shPlayer.get() !=NULL){
+//        Player *player = shPlayer.get();
+//        int size = 0;
+//        player->getBufferData( &size, audioTmpData);
+//        if(size > 0){
+//          audioTmpLen = size;
+//          pAudio_pos = audioTmpData;
+//        }
+//      }
+//    }
+//
+//    if(audioTmpLen > 0){
+//      int toFill = audioTmpLen >= len ? len : audioTmpLen;
+//      SDL_MixAudio(stream, pAudio_pos, toFill, SDL_MIX_MAXVOLUME);
+//	    pAudio_pos += toFill;
+//	    audioTmpLen -= toFill;
+//    }
+//
+//  }
 
-    if(audioTmpLen == 0){
-      //读取音频数据  填充
-      if(shPlayer != NULL && shPlayer.get() !=NULL){
-        Player *player = shPlayer.get();
-        int size = 0;
-        player->getBufferData( &size, audioTmpData);
-        if(size > 0){
-          audioTmpLen = size;
-          pAudio_pos = audioTmpData;
-        }
-      }
+
+  if(shPlayer != NULL && shPlayer.get() !=NULL){
+    Player *player = shPlayer.get();
+    int size = 0;
+    player->getBufferData( &size, audioTmpData);
+    if(size > 0){
+      len = len > size ? size: len;
+      SDL_MixAudio(stream,audioTmpData ,len, SDL_MIX_MAXVOLUME);
     }
-
-    if(audioTmpLen > 0){
-      int toFill = audioTmpLen >= len ? len : audioTmpLen;
-      SDL_MixAudio(stream, pAudio_pos, toFill, SDL_MIX_MAXVOLUME);
-	    pAudio_pos += toFill;
-	    audioTmpLen -= toFill;
-    }
-
   }
 
+  // if(f_r_pcm == NULL){
+  //   f_r_pcm = fopen("/home/guoweijie004/acc.pcm", "r");
+  // }
 
+  // while(!feof(f_r_pcm )) {
+  //   size_t size = fread(audioTmpData, 1, len , f_r_pcm );
+  //   SDL_MixAudio(stream,audioTmpData ,size, SDL_MIX_MAXVOLUME);
+  //   return ;
+  // }
 
 }
 
@@ -200,7 +220,7 @@ static int initAudioPlayer(){
 	audioSpec.format = AUDIO_S16SYS;
 	
 	// 声道数。例如单声道取值为1，立体声取值为2
-	audioSpec.channels = 2;
+	audioSpec.channels = 1;
 	
 	// 设置静音的值
 	// audioSpec.silence = 0;
@@ -261,11 +281,11 @@ int main (int argc, char* argv[]){
   SDL_PauseAudio(0);
 
 
-  // while(1){
-  //   SDL_Delay(1);
-  // }
+//   while(1){
+//     SDL_Delay(1);
+//   }
 
-  sleep(12);
+   sleep(20);
 
 	return 0;
 }

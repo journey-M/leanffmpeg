@@ -306,7 +306,7 @@ static SLPlayItf playerPlay = NULL;
 #define SAMPLE_RATE 44100
 #define PERIOD_TIME 20  // 20ms
 #define FRAME_SIZE SAMPLE_RATE * PERIOD_TIME / 1000
-#define CHANNELS 2
+#define CHANNELS 1
 #define BUFFER_SIZE   (FRAME_SIZE * CHANNELS)
 
 
@@ -345,11 +345,11 @@ static void createAudioPlayer(SLEngineItf engineEngine, SLObjectItf outputMixObj
     // PCM 数据源格式
     SLDataFormat_PCM dataSourceFormat = {
             SL_DATAFORMAT_PCM,
-            2,
+            CHANNELS,
             SL_SAMPLINGRATE_44_1,
             SL_PCMSAMPLEFORMAT_FIXED_16,
             16,
-            SL_SPEAKER_FRONT_LEFT| SL_SPEAKER_FRONT_RIGHT,
+            SL_SPEAKER_FRONT_CENTER,
             SL_BYTEORDER_LITTLEENDIAN
     };
 
@@ -390,6 +390,22 @@ static void createAudioPlayer(SLEngineItf engineEngine, SLObjectItf outputMixObj
     (void) result;
 }
 
+//int64_t getPcmData(void **pcm, FILE *pcmFile, uint8_t *out_buffer) {
+//    if(pcmFile == NULL){
+//        pcmFile = fopen("/sdcard/acc.pcm","r");
+//    }
+//    while(!feof(pcmFile)) {
+//        size_t size = fread(out_buffer, 1, 44100 * 2 , pcmFile);
+//        *pcm = out_buffer;
+//        return size;
+//    }
+//    return 0;
+//}
+
+uint8_t *buffer = new uint8_t[BUFFER_SIZE];
+uint8_t *out_buffer = new uint8_t [44100*2];
+FILE *pcmFile = NULL;
+
 // 播放音频时的回调
 static void AudioPlayerCallback(SLAndroidSimpleBufferQueueItf bufferQueueItf, void *context){
     //TODO 获取得到的数据
@@ -402,6 +418,7 @@ static void AudioPlayerCallback(SLAndroidSimpleBufferQueueItf bufferQueueItf, vo
 //        delete playerContext->buffer;
 //    }
 
+    FFLOGE("AudioPlayerCallback", "callbackk  ------- AudioPlayerCallback  \n");
     if(player != NULL){
         int size = 0;
         uint8_t *buffer = new uint8_t[BUFFER_SIZE];
@@ -410,6 +427,13 @@ static void AudioPlayerCallback(SLAndroidSimpleBufferQueueItf bufferQueueItf, vo
             (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
         }
     }
+
+
+//    int32_t size = getPcmData(reinterpret_cast<void **>(&buffer), pcmFile, out_buffer);
+//    FFlog("pcmBufferCallBack, size=%d", size);
+//    if (NULL != buffer && size > 0) {
+//        SLresult result = (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
+//    }
 
 }
 
@@ -432,9 +456,6 @@ static void audio_callback(unsigned char *data, int size) {
 //    envGloble->ReleaseByteArrayElements(jArrayData,
 //                                        envGloble->GetByteArrayElements(jArrayData,
 //                                                                        JNI_FALSE), 0);
-
-    if(player != NULL){
-    }
 
 
 
@@ -505,5 +526,18 @@ Java_gwj_dev_ffmpeg_videoEdit_VideoAPI_realTimePreview(JNIEnv *env, jobject thiz
     player->addInputFile(inputFile);
     player->preper(frame_call_back, audio_callback);
     player->play();
+
+//    while (1) {
+//        if (player != NULL) {
+//            int size = 0;
+//            uint8_t *buffer = new uint8_t[BUFFER_SIZE];
+//            player->getBufferData(&size, buffer);
+//            if (size > 0) {
+//                (*playerPlay)->SetPlayState(playerPlay, SL_PLAYSTATE_PLAYING);
+//                (*playerBufferQueueItf)->Enqueue(playerBufferQueueItf, buffer, size);
+//
+//            }
+//        }
+//    }
 
 }

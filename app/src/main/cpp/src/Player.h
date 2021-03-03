@@ -55,9 +55,6 @@ public:
 
     int play();
 
-    void playVideo();
-
-    void playAudio();
 
     void setCallback(PlayCallback *scallback);
 

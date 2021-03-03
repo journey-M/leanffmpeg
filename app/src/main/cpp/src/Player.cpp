@@ -10,7 +10,7 @@ static void render_thread_start(void *args) {
 
     while (!quit) {
         //休眠1秒
-        std::this_thread::sleep_for(std::chrono::milliseconds (5));
+        std::this_thread::sleep_for(std::chrono::milliseconds (10));
         map<InputFile*,Decoder*> ::iterator itor;
         itor = player->decoder_maps.begin();
         while (itor != player->decoder_maps.end()){
@@ -32,7 +32,7 @@ static void render_thread_start(void *args) {
 //        map<InputFile *, Decoder *>::iterator itor;
 //        itor = player->decoder_maps.begin();
 //        while (itor != player->decoder_maps.end()) {
-//            AudioBuffer *aBuffer = itor->second->getAudioData();
+//            AudioBufferFrame *aBuffer = itor->second->getAudioFrame();
 //            if (aBuffer != NULL) {
 //                //显示到屏幕上
 //                if (player->audio_callback) {
@@ -57,7 +57,7 @@ static void voice_player(void *args){
         itor = player->decoder_maps.begin();
         while (itor != player->decoder_maps.end()){
             //播放音频数据
-            AudioBuffer *aBuffer = itor->second->getAudioData();
+            AudioBufferFrame *aBuffer = itor->second->getAudioFrame();
             if (aBuffer != NULL) {
                 //显示到屏幕上
                 if (player->audio_callback) {
@@ -147,7 +147,7 @@ void Player::getBufferData(int* size, uint8_t *data) {
     itor = decoder_maps.begin();
     while (itor != decoder_maps.end()) {
         //播放音频数据
-        AudioBuffer *aBuffer = itor->second->getAudioData();
+        AudioBufferFrame *aBuffer = itor->second->getAudioFrame();
         if (aBuffer != NULL) {
             *size = aBuffer->size;
             memcpy(data, aBuffer->buffer, aBuffer->size);
@@ -161,12 +161,3 @@ void Player::getBufferData(int* size, uint8_t *data) {
     *size = 0;
 }
 
-void Player::playAudio() {
-
-
-}
-
-void Player::playVideo() {
-
-
-}
