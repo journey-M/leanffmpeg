@@ -79,7 +79,7 @@ template<typename T> T SafeVector<T>::pop_value() {
 
 template<typename T> int SafeVector<T>::getSize(){
     int size = elems->size();
-    FFlog("%s size = %d \n", TAG, size);
+    // FFlog("%s size = %d \n", TAG, size);
     return size;
 }
 

@@ -1,4 +1,8 @@
+#include <SDL2/SDL_audio.h>
 #include <SDL2/SDL_surface.h>
+#include <SDL2/SDL_timer.h>
+#include <bits/stdint-uintn.h>
+#include <cstdlib>
 #include <iostream> 
 #include <vector>
 #include <stdlib.h>
@@ -13,9 +17,10 @@
 
 SDL_Window *window;
 SDL_Renderer *render;
+shared_ptr<Player> shPlayer = NULL;
 
 static int createSDLwindow(){
-  if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
+  if(SDL_Init(SDL_INIT_EVERYTHING)) {
     fprintf(stderr, "Could not initialize SDL - %s\n", SDL_GetError());
     exit(1);
   }
@@ -72,7 +77,105 @@ static int seekImageFrame(Decoder *decoder){
   return 0;
 }
 
-static void frame_call_back(AVFrame* frams){
+static void frame_call_back(AVFrame* avframe){
+
+
+  int dest_width = avframe->width / 4;
+  int dest_height = avframe->height / 4;
+  char *tmpData;
+
+  //unix use RGBA 格式
+  int dest_len = dest_width * dest_height * 3 / 2;
+  // int dst_u_size = dest_width /2* dest_height /2;
+
+  uint8_t *destData = new uint8_t[dest_len];
+  uint8_t *destU = destData + dest_width * dest_height;
+  uint8_t *destV = destData + dest_width * dest_height * 5 / 4;
+
+  // scale first
+  libyuv::I420Scale(
+          avframe->data[0], avframe->width, avframe->data[2],
+          avframe->width / 2, avframe->data[1], avframe->width / 2,
+          avframe->width, avframe->height, destData, dest_width, destU,
+          dest_width / 2, destV, dest_width / 2, dest_width, dest_height,
+          libyuv::kFilterNone);
+
+  int destSize = dest_width * dest_height * 3;
+  tmpData = new char[destSize];
+
+  libyuv::I420ToRGB24(destData, dest_width, destU, dest_width / 2,
+                      destV, dest_width / 2, (uint8_t *) tmpData,
+                      dest_width * 3, dest_width, dest_height);
+
+
+
+  SDL_Rect rect ;
+  rect.x = 0;
+  rect.y = 0;
+  rect.w = dest_width;
+  rect.h = dest_height;
+
+  char showData[dest_width * dest_height *4];
+  for(int i=0 ; i< dest_width*dest_height; i++){
+    showData[4*i] = 0xff;
+    showData[4*i+1] = tmpData[i*3 +2];
+    showData[4*i+2] = tmpData[i*3 + 1];
+    showData[4*i+3] = tmpData[i*3 ];
+  }
+
+  SDL_Surface *ptmpSurface = SDL_CreateRGBSurfaceFrom(showData,dest_width, dest_height,4*8, dest_width* 4,
+    0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF);
+
+  SDL_Texture* ptmTexture = SDL_CreateTextureFromSurface(render,ptmpSurface);
+	
+  SDL_RenderClear(render);
+  SDL_RenderCopy(render,ptmTexture,NULL, &rect);
+  SDL_RenderPresent(render);
+}
+
+
+static Uint8 *pAudio_pos;
+
+static uint8_t audioTmpData[4096 *4];
+static int audioTmpLen = 0;
+
+static void fill_audio_buffer(void *userdata, Uint8 * stream, int len){
+  SDL_memset(stream, 0, len);
+	// 判断是否有读到数据
+	// if (audio_len == 0)
+	// 	return;
+
+	// len = (len > audio_len ? audio_len : len);
+	// SDL_MixAudio(stream, pAudio_pos, len, SDL_MIX_MAXVOLUME);
+	// pAudio_pos += len;
+	// audio_len -= len;
+  FFlog("fill_audio_buffer  --- data --- size = %d  %d\n", len, audioTmpLen);
+
+  if(len >0){
+
+    if(audioTmpLen == 0){
+      //读取音频数据  填充
+      if(shPlayer != NULL && shPlayer.get() !=NULL){
+        Player *player = shPlayer.get();
+        int size = 0;
+        player->getBufferData( &size, audioTmpData);
+        if(size > 0){
+          audioTmpLen = size;
+          pAudio_pos = audioTmpData;
+        }
+      }
+    }
+
+    if(audioTmpLen > 0){
+      int toFill = audioTmpLen >= len ? len : audioTmpLen;
+      SDL_MixAudio(stream, pAudio_pos, toFill, SDL_MIX_MAXVOLUME);
+	    pAudio_pos += toFill;
+	    audioTmpLen -= toFill;
+    }
+
+  }
+
+
 
 }
 
@@ -86,6 +189,41 @@ static void audio_callback(unsigned char* data, int size){
     FFlog("receive  --- data --- size = %d \n", size);
 }
 
+static int initAudioPlayer(){
+  /*** 初始化初始化SDL_AudioSpec结构体 ***/
+	SDL_AudioSpec audioSpec;
+	
+	// 音频数据的采样率。常用的有48000，44100等
+	audioSpec.freq = 44100; 
+	
+	// 音频数据的格式
+	audioSpec.format = AUDIO_S16SYS;
+	
+	// 声道数。例如单声道取值为1，立体声取值为2
+	audioSpec.channels = 2;
+	
+	// 设置静音的值
+	// audioSpec.silence = 0;
+
+	// 音频缓冲区中的采样个数，要求必须是2的n次方
+	audioSpec.samples = 1024;
+
+	// 填充音频缓冲区的回调函数
+	audioSpec.callback = fill_audio_buffer;
+	/************************************/
+	audioSpec.userdata = audioTmpData;
+
+	// 打开音频设备
+	if (SDL_OpenAudio(&audioSpec, nullptr) < 0)
+	{
+		FFlog("Can not open audio! \n");
+		return -1;
+	}
+	FFlog("pen audio sucess! \n");
+  return 0;
+}
+
+
 int main (int argc, char* argv[]){
 
 	if(argc < 2){
@@ -97,6 +235,9 @@ int main (int argc, char* argv[]){
   if (ret < 0) {
     return -1;
   }
+
+  //初始化音频播放器
+  initAudioPlayer();
 
 	avformat_network_init();
 	//first check and open InputFile
@@ -111,14 +252,20 @@ int main (int argc, char* argv[]){
 	//seekImageFrame(&decoder);
 	
 
-	shared_ptr<Player> shPlayer =make_shared<Player>();
+	shPlayer =make_shared<Player>();
 	Player* player = shPlayer.get();
 	player->addInputFile(&inputFile);
 	player->preper(frame_call_back, audio_callback);
   player->play();
 
+  SDL_PauseAudio(0);
 
-  sleep(10);
+
+  // while(1){
+  //   SDL_Delay(1);
+  // }
+
+  sleep(12);
 
 	return 0;
 }

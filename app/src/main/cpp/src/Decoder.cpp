@@ -2,8 +2,6 @@
 #include "libyuv/convert_argb.h"
 #include <cstdio>
 #include <cstdlib>
-//#include <libavcodec/codec.h>
-#include <libavutil/error.h>
 #include <string>
 #include "Log.h"
 

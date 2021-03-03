@@ -19,3 +19,6 @@ app/src/main/cpp/unix/build
 app/src/main/cpp/unix/*.jpg
 app/src/main/cpp/.cache
 app/src/main/cpp/unix/.cache
+app/src/main/cpp/unix/CMakeFiles/
+app/src/main/cpp/unix/cmake_install.cmake
+app/src/main/cpp/unix/Makefile

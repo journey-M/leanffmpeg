@@ -8,13 +8,14 @@
 #include <vector>
 #include <thread>
 #include <mutex>
-#include <libswresample/swresample.h>
-
 
 extern "C" {
 #include <libyuv.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavutil/error.h>
+#include <libswresample/swresample.h>
+
 #ifdef unix
 #include <jpeglib.h>
 #endif

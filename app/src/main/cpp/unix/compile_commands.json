@@ -1,1 +1,27 @@
-build/compile_commands.json
+[
+{
+  "directory": "/home/gwj/AndroidStudioProjects/ffsdk/unix",
+  "command": "/usr/bin/c++ -Dunix -I/home/gwj/AndroidStudioProjects/ffsdk/unix/include -I/home/gwj/AndroidStudioProjects/ffsdk/unix/../src  -std=c++11   -Wall -g -o CMakeFiles/a.dir/main.cpp.o -c /home/gwj/AndroidStudioProjects/ffsdk/unix/main.cpp",
+  "file": "/home/gwj/AndroidStudioProjects/ffsdk/unix/main.cpp"
+},
+{
+  "directory": "/home/gwj/AndroidStudioProjects/ffsdk/unix",
+  "command": "/usr/bin/c++ -Dunix -I/home/gwj/AndroidStudioProjects/ffsdk/unix/include -I/home/gwj/AndroidStudioProjects/ffsdk/unix/../src  -std=c++11   -Wall -g -o CMakeFiles/a.dir/home/gwj/AndroidStudioProjects/ffsdk/src/InputFile.cpp.o -c /home/gwj/AndroidStudioProjects/ffsdk/src/InputFile.cpp",
+  "file": "/home/gwj/AndroidStudioProjects/ffsdk/src/InputFile.cpp"
+},
+{
+  "directory": "/home/gwj/AndroidStudioProjects/ffsdk/unix",
+  "command": "/usr/bin/c++ -Dunix -I/home/gwj/AndroidStudioProjects/ffsdk/unix/include -I/home/gwj/AndroidStudioProjects/ffsdk/unix/../src  -std=c++11   -Wall -g -o CMakeFiles/a.dir/home/gwj/AndroidStudioProjects/ffsdk/src/Decoder.cpp.o -c /home/gwj/AndroidStudioProjects/ffsdk/src/Decoder.cpp",
+  "file": "/home/gwj/AndroidStudioProjects/ffsdk/src/Decoder.cpp"
+},
+{
+  "directory": "/home/gwj/AndroidStudioProjects/ffsdk/unix",
+  "command": "/usr/bin/c++ -Dunix -I/home/gwj/AndroidStudioProjects/ffsdk/unix/include -I/home/gwj/AndroidStudioProjects/ffsdk/unix/../src  -std=c++11   -Wall -g -o CMakeFiles/a.dir/home/gwj/AndroidStudioProjects/ffsdk/src/Player.cpp.o -c /home/gwj/AndroidStudioProjects/ffsdk/src/Player.cpp",
+  "file": "/home/gwj/AndroidStudioProjects/ffsdk/src/Player.cpp"
+},
+{
+  "directory": "/home/gwj/AndroidStudioProjects/ffsdk/unix",
+  "command": "/usr/bin/c++ -Dunix -I/home/gwj/AndroidStudioProjects/ffsdk/unix/include -I/home/gwj/AndroidStudioProjects/ffsdk/unix/../src  -std=c++11   -Wall -g -o CMakeFiles/a.dir/home/gwj/AndroidStudioProjects/ffsdk/src/VideoState.cpp.o -c /home/gwj/AndroidStudioProjects/ffsdk/src/VideoState.cpp",
+  "file": "/home/gwj/AndroidStudioProjects/ffsdk/src/VideoState.cpp"
+}
+]
