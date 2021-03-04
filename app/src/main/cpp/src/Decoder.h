@@ -98,13 +98,13 @@ public :
     pthread_t th_decode_audio;
     SafeVector<AVPacket *> *videoPacketList;
     SafeVector<AVPacket *> *audioPacketList;
-    #define  MAX_V_DISPLAY_FRAMS  25
-    #define  MIN_V_DISPLAY_FRAMS  16
+    #define  MAX_V_DISPLAY_FRAMS  20
+    #define  MIN_V_DISPLAY_FRAMS  10
     vector<DiaplayBufferFrame*> video_display_list;
 
     //音频解码相关参数
-    #define  MAX_A_DISPLAY_FRAMS  200
-    #define  MIN_A_DISPLAY_FRAMS  100
+    #define  MAX_A_DISPLAY_FRAMS  120
+    #define  MIN_A_DISPLAY_FRAMS  80
     vector<AudioBufferFrame*> audio_display_list;
     //音频上下文
     SwrContext *swr_ctx = NULL;

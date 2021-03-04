@@ -181,7 +181,8 @@ static void fill_audio_buffer(void *userdata, Uint8 * stream, int len){
     Player *player = shPlayer.get();
     int size = 0;
       player->getAudioBufferData(&size, audioTmpData);
-    if(size > 0){
+      FFlog("got audo size = %d \n", size);
+      if(size > 0){
       len = len > size ? size: len;
       SDL_MixAudio(stream,audioTmpData ,len, SDL_MIX_MAXVOLUME);
     }
@@ -206,7 +207,7 @@ static void fill_audio_buffer(void *userdata, Uint8 * stream, int len){
  */
 static void audio_callback(unsigned char* data, int size){
 
-    FFlog("receive  --- data --- size = %d \n", size);
+    FFlog("receive  ---audio_callback data --- size = %d \n", size);
 }
 
 static int initAudioPlayer(){
@@ -285,7 +286,7 @@ int main (int argc, char* argv[]){
 //     SDL_Delay(1);
 //   }
 
-   sleep(20);
+   sleep(35);
 
 	return 0;
 }

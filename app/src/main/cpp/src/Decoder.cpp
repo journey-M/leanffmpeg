@@ -8,9 +8,9 @@
 Decoder::Decoder(InputFile *input) {
 
     av_init_packet(&flush_pkt);
-    videoPacketList = new SafeVector<AVPacket*> (MIN_V_DISPLAY_FRAMS, MAX_V_DISPLAY_FRAMS);
-    videoPacketList ->setTag("video packet");
-    audioPacketList = new SafeVector<AVPacket*> (MIN_A_DISPLAY_FRAMS, MAX_A_DISPLAY_FRAMS);
+    videoPacketList = new SafeVector<AVPacket *>(60, 120);
+    videoPacketList->setTag("video packet");
+    audioPacketList = new SafeVector<AVPacket *>(80, 120);
     audioPacketList->setTag("audio packet");
     mInputFile = input;
 
@@ -443,7 +443,7 @@ void Decoder::scalAndSaveFrame(AVFrame *avframe, double playTime) {
 }
 
 
-vector<string> Decoder::createVideoThumbs() {
+vector <string> Decoder::createVideoThumbs() {
     v_path_results.clear();
     AVPacket avPacket;
     int ret = -1;
@@ -498,7 +498,8 @@ int Decoder::queue_picture(AVFrame *src_frame, double pts, double duration, int6
         pthread_mutex_unlock(&mutex_video_frame_list);
     }
 
-    DiaplayBufferFrame *vp = static_cast<DiaplayBufferFrame *>(malloc(sizeof(struct DiaplayBufferFrame)));
+    DiaplayBufferFrame *vp = static_cast<DiaplayBufferFrame *>(malloc(
+            sizeof(struct DiaplayBufferFrame)));
     vp->width = src_frame->width;
     vp->height = src_frame->height;
     vp->format = src_frame->format;
@@ -510,7 +511,7 @@ int Decoder::queue_picture(AVFrame *src_frame, double pts, double duration, int6
 
     pthread_mutex_lock(&mutex_video_frame_list);
     video_display_list.push_back(vp);
-//    FFlog("showing frame size = %d \n", video_display_list.size());
+//    FFlog("showing video frame size = %d \n", video_display_list.size());
     pthread_mutex_unlock(&mutex_video_frame_list);
     notifyDataPreperd();
     return 0;
@@ -546,7 +547,7 @@ FILE *f = NULL;
 
 int Decoder::queue_sample(AVFrame *src_frame, double pts, double duration, int64_t pos) {
 
-    if (video_display_list.size() > MAX_A_DISPLAY_FRAMS) {
+    if (audio_display_list.size() >= MAX_A_DISPLAY_FRAMS) {
         pthread_mutex_lock(&mutex_audio_frame_list);
         pthread_cond_wait(&cond_audio_frame_list, &mutex_audio_frame_list);
         pthread_mutex_unlock(&mutex_audio_frame_list);
@@ -562,7 +563,7 @@ int Decoder::queue_sample(AVFrame *src_frame, double pts, double duration, int64
     enum AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
 
     if (swr_ctx == NULL) {
-        f = fopen("/sdcard/acc.pcm", "w");
+        f = fopen("acc.pcm", "w");
         swr_ctx = swr_alloc();
         //重采样设置选项-----------------------------------------------------------start
         //输入的采样格式
@@ -570,7 +571,7 @@ int Decoder::queue_sample(AVFrame *src_frame, double pts, double duration, int64
 
         //输入的采样率
         int in_sample_rate = aCodecCtx->sample_rate;
-        printf("sample_rate = %d   nb_samples : %d\n", in_sample_rate, src_frame->nb_samples);
+        FFlog("sample_rate = %d   nb_samples : %d\n", in_sample_rate, src_frame->nb_samples);
 
         uint64_t in_ch_layout = aCodecCtx->channel_layout;
         //输出的声道布局
@@ -584,11 +585,16 @@ int Decoder::queue_sample(AVFrame *src_frame, double pts, double duration, int64
     AudioBufferFrame *audioBuffer = static_cast<AudioBufferFrame *>(malloc(
             sizeof(struct AudioBufferFrame)));
 
+    int origin_size = av_samples_get_buffer_size(NULL, aCodecCtx->channel_layout,
+                                               src_frame->nb_samples,
+                                                 aCodecCtx->sample_fmt, 1);
     int data_size = av_samples_get_buffer_size(NULL, out_chanels,
                                                src_frame->nb_samples,
                                                out_sample_fmt, 1);
+    FFlog("audio : origin data size: %d  after  data size : %d  \n", origin_size, data_size);
+
     uint8_t *out_buffer = (uint8_t *) malloc(data_size);
-    swr_convert(swr_ctx, &out_buffer, data_size, (const uint8_t **) src_frame->data,
+    swr_convert(swr_ctx, &out_buffer, src_frame->nb_samples, (const uint8_t**)src_frame->extended_data,
                 src_frame->nb_samples);
     audioBuffer->buffer = out_buffer;
     audioBuffer->size = data_size;
@@ -597,16 +603,16 @@ int Decoder::queue_sample(AVFrame *src_frame, double pts, double duration, int64
     audioBuffer->duration = duration;
     audioBuffer->pos = pos;
 
-//    if (f) {
-//        fwrite(out_buffer, 1, data_size, f);
-//    }
+    if (f) {
+        fwrite(out_buffer, 1, data_size, f);
+    }
 
     //释放原有的AvFrame
     av_frame_unref(src_frame);
 
     pthread_mutex_lock(&mutex_audio_frame_list);
     audio_display_list.push_back(audioBuffer);
-    FFlog("showing audio frame size = %d \n", audio_display_list.size());
+//    FFlog("showing audio frame size = %d \n", audio_display_list.size());
     pthread_mutex_unlock(&mutex_audio_frame_list);
     notifyDataPreperd();
     return 0;
@@ -656,17 +662,17 @@ int Decoder::decoder_decode_frame(AVFrame *frame, AVCodec *codec, AVCodecContext
                         break;
                     case AVMEDIA_TYPE_AUDIO:
                         ret = avcodec_receive_frame(codecCtx, frame);
-//                        if (ret >= 0) {
-//                            AVRational tb = (AVRational){1, frame->sample_rate};
-//                            if (frame->pts != AV_NOPTS_VALUE)
-//                                frame->pts = av_rescale_q(frame->pts, d->avctx->pkt_timebase, tb);
+                        if (ret >= 0) {
+                            AVRational tb = (AVRational){1, frame->sample_rate};
+                            if (frame->pts != AV_NOPTS_VALUE)
+                                frame->pts = av_rescale_q(frame->pts, aCodecCtx->pkt_timebase, tb);
 //                            else if (d->next_pts != AV_NOPTS_VALUE)
 //                                frame->pts = av_rescale_q(d->next_pts, d->next_pts_tb, tb);
 //                            if (frame->pts != AV_NOPTS_VALUE) {
 //                                d->next_pts = frame->pts + frame->nb_samples;
 //                                d->next_pts_tb = tb;
 //                            }
-//                        }
+                        }
                         break;
                 }
                 if (ret == AVERROR_EOF) {
@@ -728,10 +734,9 @@ int Decoder::decoder_decode_frame(AVFrame *frame, AVCodec *codec, AVCodecContext
 //                }
 //            } else {
             if (avcodec_send_packet(codecCtx, pkt) == AVERROR(EAGAIN)) {
-                FFlog("Receive_frame and send_packet both returned EAGAIN, which is an API violation.\n",
-                      AV_LOG_ERROR);
-//                queue.packet_pending = 1;
-//                    av_packet_move_ref(&d->pkt, &pkt);
+                FFlog("Receive_frame and send_packet both returned EAGAIN, which is an API violation.\n",AV_LOG_ERROR);
+//                queue->packet_pending = 1;
+//                av_packet_move_ref(&d->pkt, &pkt);
             }
 //            }
             av_packet_unref(pkt);
@@ -798,7 +803,6 @@ static void pth_read_packet(void *args) {
 
         }
 
-//        || decoder->audioPacketList.enough()
         if (decoder->videoPacketList->enough() && decoder->audioPacketList->enough()) {
             struct timeval now;
             struct timespec wtime;
@@ -808,7 +812,7 @@ static void pth_read_packet(void *args) {
             //休眠5毫秒
             wtime.tv_nsec = (now.tv_usec + 5 * 1000) * 1000;
             pthread_mutex_lock(&decoder->mutex_read_th);
-            FFlog("read--thread--- begain --- wait");
+//            FFlog("read--thread--- begain --- wait\n");
             decoder->videoPacketList->printSize();
             decoder->audioPacketList->printSize();
             pthread_cond_timedwait(&decoder->cond_read_th, &decoder->mutex_read_th, &wtime);
@@ -816,7 +820,7 @@ static void pth_read_packet(void *args) {
             continue;
         }
 
-        FFlog("read--thread--- wake  from --- wait");
+//        FFlog("read--thread--- wake  from --- wait \n");
 
 
         AVPacket *avPacket = av_packet_alloc();
@@ -1030,14 +1034,14 @@ static void th_decode_audio_packet(void *argv) {
 
 }
 
-void Decoder::setDataPreperdCallback(void (*calback)()){
+void Decoder::setDataPreperdCallback(void (*calback)()) {
     data_preper_calback = calback;
 }
 
-void Decoder::notifyDataPreperd(){
-    if(!isNotified && video_display_list.size() >= 1 && audio_display_list.size() > 2){
+void Decoder::notifyDataPreperd() {
+    if (!isNotified && video_display_list.size() >= 1 && audio_display_list.size() > 2) {
         isNotified = 1;
-        if(data_preper_calback != NULL){
+        if (data_preper_calback != NULL) {
             data_preper_calback();
         }
     }

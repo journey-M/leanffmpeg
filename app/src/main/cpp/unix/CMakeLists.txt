@@ -19,5 +19,5 @@ message("libs sdl2 folder : "${SDL2_LIBRARIES})
 
 # add_library(yuv STATIC yuv)
 #add_library(Decoder src/InputFile.cpp src/Decoder.cpp src/Player.cpp src/VideoState.cpp)
-add_executable(a main.cpp src/InputFile.cpp src/Decoder.cpp src/Player.cpp src/VideoState.cpp)
+add_executable(a main.cpp src/InputFile.cpp src/Decoder.cpp src/Player.cpp src/VideoState.cpp src/Clock.cpp)
 target_link_libraries(a PUBLIC avformat avcodec avutil pthread swscale swresample jpeg avfilter yuv m z ${SDL2_LIBRARIES})
