@@ -2301,7 +2301,7 @@ typedef struct AVCodecContext {
     int frame_size;
 
     /**
-     * Frame counter, set by libavcodec.
+     * DiaplayBufferFrame counter, set by libavcodec.
      *
      * - decoding: total number of frames returned from the decoder so far.
      * - encoding: total number of frames passed to the encoder so far.
@@ -3603,7 +3603,7 @@ typedef struct AVCodec {
     int priv_data_size;
     struct AVCodec *next;
     /**
-     * @name Frame-level threading support functions
+     * @name DiaplayBufferFrame-level threading support functions
      * @{
      */
     /**
@@ -5174,7 +5174,7 @@ int avcodec_get_hw_frames_parameters(AVCodecContext *avctx,
 
 
 /**
- * @defgroup lavc_parsing Frame parsing
+ * @defgroup lavc_parsing DiaplayBufferFrame parsing
  * @{
  */
 

@@ -1,5 +1,4 @@
 #include "Decoder.h"
-#include "libyuv/convert_argb.h"
 #include <cstdio>
 #include <cstdlib>
 #include <string>
@@ -9,10 +8,12 @@
 Decoder::Decoder(InputFile *input) {
 
     av_init_packet(&flush_pkt);
-    videoPacketList.setTag("video packet");
-    audioPacketList.setTag("audio packet");
-
+    videoPacketList = new SafeVector<AVPacket*> (MIN_V_DISPLAY_FRAMS, MAX_V_DISPLAY_FRAMS);
+    videoPacketList ->setTag("video packet");
+    audioPacketList = new SafeVector<AVPacket*> (MIN_A_DISPLAY_FRAMS, MAX_A_DISPLAY_FRAMS);
+    audioPacketList->setTag("audio packet");
     mInputFile = input;
+
     findAudioStream();
     findVideoStream();
     initVideoDecoder();
@@ -497,7 +498,7 @@ int Decoder::queue_picture(AVFrame *src_frame, double pts, double duration, int6
         pthread_mutex_unlock(&mutex_video_frame_list);
     }
 
-    Frame *vp = static_cast<Frame *>(malloc(sizeof(struct Frame)));
+    DiaplayBufferFrame *vp = static_cast<DiaplayBufferFrame *>(malloc(sizeof(struct DiaplayBufferFrame)));
     vp->width = src_frame->width;
     vp->height = src_frame->height;
     vp->format = src_frame->format;
@@ -511,10 +512,11 @@ int Decoder::queue_picture(AVFrame *src_frame, double pts, double duration, int6
     video_display_list.push_back(vp);
 //    FFlog("showing frame size = %d \n", video_display_list.size());
     pthread_mutex_unlock(&mutex_video_frame_list);
+    notifyDataPreperd();
     return 0;
 }
 
-int Decoder::pop_picture(Frame **frame) {
+int Decoder::pop_picture(DiaplayBufferFrame **frame) {
     if (video_display_list.size() <= MIN_V_DISPLAY_FRAMS) {
         pthread_mutex_lock(&mutex_video_frame_list);
         pthread_cond_signal(&cond_video_frame_list);
@@ -595,9 +597,9 @@ int Decoder::queue_sample(AVFrame *src_frame, double pts, double duration, int64
     audioBuffer->duration = duration;
     audioBuffer->pos = pos;
 
-    if (f) {
-        fwrite(out_buffer, 1, data_size, f);
-    }
+//    if (f) {
+//        fwrite(out_buffer, 1, data_size, f);
+//    }
 
     //释放原有的AvFrame
     av_frame_unref(src_frame);
@@ -606,6 +608,7 @@ int Decoder::queue_sample(AVFrame *src_frame, double pts, double duration, int64
     audio_display_list.push_back(audioBuffer);
     FFlog("showing audio frame size = %d \n", audio_display_list.size());
     pthread_mutex_unlock(&mutex_audio_frame_list);
+    notifyDataPreperd();
     return 0;
 }
 
@@ -617,6 +620,7 @@ int Decoder::pop_sample(AudioBufferFrame **frame) {
         pthread_mutex_unlock(&mutex_audio_frame_list);
     }
     if (audio_display_list.size() == 0) {
+        FFlog("AudioPlayerCallback -- display audio size:  %d \n", 0);
         return 0;
     }
     pthread_mutex_lock(&mutex_audio_frame_list);
@@ -697,6 +701,7 @@ int Decoder::decoder_decode_frame(AVFrame *frame, AVCodec *codec, AVCodecContext
                     pthread_mutex_lock(&mutex_read_th);
                     pthread_cond_signal(&cond_read_th);
                     pthread_mutex_unlock(&mutex_read_th);
+                    queue->printSize();
                 }
                 break;
             }
@@ -738,7 +743,7 @@ int Decoder::decoder_decode_frame(AVFrame *frame, AVCodec *codec, AVCodecContext
 int Decoder::get_video_frame(AVFrame *frame) {
     int got_picture;
 
-    if ((got_picture = decoder_decode_frame(frame, videoCodec, vCodecCtx, &videoPacketList)) < 0)
+    if ((got_picture = decoder_decode_frame(frame, videoCodec, vCodecCtx, videoPacketList)) < 0)
         return -1;
 
     if (got_picture) {
@@ -794,7 +799,7 @@ static void pth_read_packet(void *args) {
         }
 
 //        || decoder->audioPacketList.enough()
-        if (decoder->videoPacketList.enough()) {
+        if (decoder->videoPacketList->enough() && decoder->audioPacketList->enough()) {
             struct timeval now;
             struct timespec wtime;
             //阻塞10毫秒
@@ -803,10 +808,16 @@ static void pth_read_packet(void *args) {
             //休眠5毫秒
             wtime.tv_nsec = (now.tv_usec + 5 * 1000) * 1000;
             pthread_mutex_lock(&decoder->mutex_read_th);
+            FFlog("read--thread--- begain --- wait");
+            decoder->videoPacketList->printSize();
+            decoder->audioPacketList->printSize();
             pthread_cond_timedwait(&decoder->cond_read_th, &decoder->mutex_read_th, &wtime);
             pthread_mutex_unlock(&decoder->mutex_read_th);
             continue;
         }
+
+        FFlog("read--thread--- wake  from --- wait");
+
 
         AVPacket *avPacket = av_packet_alloc();
         ret = av_read_frame(decoder->mInputFile->fmt_ctx, avPacket);
@@ -821,9 +832,9 @@ static void pth_read_packet(void *args) {
         }
 
         if (avPacket->stream_index == decoder->videoStreamIndex) {
-            decoder->videoPacketList.push_value(avPacket);
+            decoder->videoPacketList->push_value(avPacket);
         } else if (avPacket->stream_index == decoder->audioStreamIndex) {
-            decoder->audioPacketList.push_value(avPacket);
+            decoder->audioPacketList->push_value(avPacket);
         } else {
             av_packet_unref(avPacket);
             continue;
@@ -954,7 +965,7 @@ static void th_decode_audio_packet(void *argv) {
     do {
         if ((got_frame = decoder->decoder_decode_frame(frame, decoder->audioCodec,
                                                        decoder->aCodecCtx,
-                                                       &decoder->audioPacketList)) < 0) {
+                                                       decoder->audioPacketList)) < 0) {
             //TODO 结束标志
             av_frame_unref(frame);
             return;
@@ -998,7 +1009,7 @@ static void th_decode_audio_packet(void *argv) {
                 tb = av_buffersink_get_time_base(is->out_audio_filter);
 #endif
 
-            int64_t pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
+            double pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
             int64_t pos = frame->pkt_pos;
 //            af->serial = is->auddec.pkt_serial;
             double duration = av_q2d((AVRational) {frame->nb_samples, frame->sample_rate});
@@ -1019,6 +1030,18 @@ static void th_decode_audio_packet(void *argv) {
 
 }
 
+void Decoder::setDataPreperdCallback(void (*calback)()){
+    data_preper_calback = calback;
+}
+
+void Decoder::notifyDataPreperd(){
+    if(!isNotified && video_display_list.size() >= 1 && audio_display_list.size() > 2){
+        isNotified = 1;
+        if(data_preper_calback != NULL){
+            data_preper_calback();
+        }
+    }
+}
 
 void Decoder::preperPlay() {
     pthread_create(&th_read, NULL, reinterpret_cast<void *(*)(void *)>(pth_read_packet), this);
@@ -1032,9 +1055,9 @@ void Decoder::preperPlay() {
 //    pthread_join(th_read, NULL);
 }
 
-Frame *Decoder::getDisplayFrame() {
+DiaplayBufferFrame *Decoder::getDisplayFrame() {
 
-    Frame *frame;
+    DiaplayBufferFrame *frame;
     int ret = pop_picture(&frame);
 
     if (ret > 0) {

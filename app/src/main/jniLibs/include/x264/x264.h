@@ -509,7 +509,7 @@ typedef struct x264_param_t
      * The input timebase should be the timebase corresponding to the output framerate. This should be constant.
      * e.g. for 3:2 pulldown timebase should be 1001/30000
      * The PTS passed with each frame must be the PTS of the frame after pulldown is applied.
-     * Frame doubling and tripling require b_vfr_input set to zero (see H.264 Table D-1)
+     * DiaplayBufferFrame doubling and tripling require b_vfr_input set to zero (see H.264 Table D-1)
      *
      * Pulldown changes are not clearly defined in H.264. Therefore, it is the calling app's responsibility to manage this.
      */

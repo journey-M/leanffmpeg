@@ -159,7 +159,7 @@ static void fill_audio_buffer(void *userdata, Uint8 * stream, int len){
 //      if(shPlayer != NULL && shPlayer.get() !=NULL){
 //        Player *player = shPlayer.get();
 //        int size = 0;
-//        player->getBufferData( &size, audioTmpData);
+//        player->getAudioBufferData( &size, audioTmpData);
 //        if(size > 0){
 //          audioTmpLen = size;
 //          pAudio_pos = audioTmpData;
@@ -180,7 +180,7 @@ static void fill_audio_buffer(void *userdata, Uint8 * stream, int len){
   if(shPlayer != NULL && shPlayer.get() !=NULL){
     Player *player = shPlayer.get();
     int size = 0;
-    player->getBufferData( &size, audioTmpData);
+      player->getAudioBufferData(&size, audioTmpData);
     if(size > 0){
       len = len > size ? size: len;
       SDL_MixAudio(stream,audioTmpData ,len, SDL_MIX_MAXVOLUME);
@@ -268,7 +268,7 @@ int main (int argc, char* argv[]){
   //获取视频的封面
   //getImageThums(&decoder);
 	
-	//seek Frame in video
+	//seek DiaplayBufferFrame in video
 	//seekImageFrame(&decoder);
 	
 

@@ -418,11 +418,13 @@ static void AudioPlayerCallback(SLAndroidSimpleBufferQueueItf bufferQueueItf, vo
 //        delete playerContext->buffer;
 //    }
 
-    FFLOGE("AudioPlayerCallback", "callbackk  ------- AudioPlayerCallback  \n");
     if(player != NULL){
         int size = 0;
         uint8_t *buffer = new uint8_t[BUFFER_SIZE];
-        player->getBufferData(&size, buffer);
+        player->getAudioBufferData(&size, buffer);
+
+        FFlog("AudioPlayerCallback -- buffer size:  %d \n", size);
+
         if(size > 0){
             (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
         }
@@ -458,6 +460,7 @@ static void audio_callback(unsigned char *data, int size) {
 //                                                                        JNI_FALSE), 0);
 
 
+    AudioPlayerCallback(playerBufferQueueItf, NULL);
 
 
 }
@@ -519,19 +522,21 @@ Java_gwj_dev_ffmpeg_videoEdit_VideoAPI_realTimePreview(JNIEnv *env, jobject thiz
         result = (*playerPlay)->SetPlayState(playerPlay, SL_PLAYSTATE_PLAYING);
         assert(SL_RESULT_SUCCESS == result);
 
-        AudioPlayerCallback(playerBufferQueueItf, NULL);
-
     }
     player = new Player();
     player->addInputFile(inputFile);
     player->preper(frame_call_back, audio_callback);
     player->play();
 
+
+
+//    AudioPlayerCallback(playerBufferQueueItf, NULL);
+
 //    while (1) {
 //        if (player != NULL) {
 //            int size = 0;
 //            uint8_t *buffer = new uint8_t[BUFFER_SIZE];
-//            player->getBufferData(&size, buffer);
+//            player->getAudioBufferData(&size, buffer);
 //            if (size > 0) {
 //                (*playerPlay)->SetPlayState(playerPlay, SL_PLAYSTATE_PLAYING);
 //                (*playerBufferQueueItf)->Enqueue(playerBufferQueueItf, buffer, size);

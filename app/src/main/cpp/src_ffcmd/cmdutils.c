@@ -1617,7 +1617,7 @@ static void print_codecs(int encoder)
            " V..... = Video\n"
            " A..... = Audio\n"
            " S..... = Subtitle\n"
-           " .F.... = Frame-level multithreading\n"
+           " .F.... = DiaplayBufferFrame-level multithreading\n"
            " ..S... = Slice-level multithreading\n"
            " ...X.. = Codec is experimental\n"
            " ....B. = Supports draw_horiz_band\n"

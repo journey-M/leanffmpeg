@@ -529,7 +529,7 @@ struct AVFilterLink {
     int age_index;
 
     /**
-     * Frame rate of the stream on the link, or 1/0 if unknown or variable;
+     * DiaplayBufferFrame rate of the stream on the link, or 1/0 if unknown or variable;
      * if left to 0/0, will be automatically copied from the first input
      * of the source filter if it exists.
      *

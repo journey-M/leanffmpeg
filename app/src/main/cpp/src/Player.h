@@ -17,9 +17,6 @@ extern "C" {
 
 }
 
-struct Clock {
-    double pts;
-};
 
 
 struct PlayCallback {
@@ -32,6 +29,12 @@ class Player {
 public:
     void (*display_back)(AVFrame* frames) = NULL;
     void (* audio_callback)(unsigned char *, int size) = NULL;
+    //视频的时钟
+    Clock *audioClock;
+    Clock *videoClock;
+    double max_frame_duration = 10.0;
+
+
 
     map<InputFile*, Decoder*> decoder_maps;
 
@@ -62,7 +65,13 @@ public:
 
     void preper(void (*display_callback)(AVFrame* frams), void (* audio_callback)(unsigned char *, int size));
 
-    void getBufferData(int* size, uint8_t *data);
+    void getAudioBufferData(int* size, uint8_t *data);
+
+    double vp_duration(double last_pts, DiaplayBufferFrame *nextvp);
+
+    double compute_target_delay(double delay);
+
+
 
 
 private:

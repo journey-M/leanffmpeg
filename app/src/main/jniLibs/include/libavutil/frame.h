@@ -527,7 +527,7 @@ typedef struct AVFrame {
  */
 
     /**
-     * Frame flags, a combination of @ref lavu_frame_flags
+     * DiaplayBufferFrame flags, a combination of @ref lavu_frame_flags
      */
     int flags;
 

@@ -24,13 +24,15 @@ private:
     char* TAG = "test";
     pthread_mutex_t mutex_list = PTHREAD_MUTEX_INITIALIZER;
 
+    int max_number;
+    int min_number;
 
 public:
 
     int packet_pending = 0 ;
 
 
-    SafeVector();
+    SafeVector(int min, int max);
 
     ~SafeVector();
 
@@ -48,10 +50,14 @@ public:
 
     void setTag(char* tag);
 
+    void printSize();
+
 };
 
-template<typename T> SafeVector<T>::SafeVector() {
-    elems = new std::vector<T>(30);
+template<typename T> SafeVector<T>::SafeVector(int min, int max) {
+    elems = new std::vector<T>();
+    this->min_number = min;
+    this->max_number = max;
 }
 
 template<typename T> SafeVector<T>::~SafeVector() {
@@ -79,17 +85,16 @@ template<typename T> T SafeVector<T>::pop_value() {
 
 template<typename T> int SafeVector<T>::getSize(){
     int size = elems->size();
-    // FFlog("%s size = %d \n", TAG, size);
     return size;
 }
 
 template<typename T> int SafeVector<T>::enough(){
-    return getSize() > 20;
+    return getSize() > max_number;
 }
 
 
 template<typename T> int SafeVector<T>::not_enough(){
-    return getSize() < 10;
+    return getSize() < min_number;
 }
 
 template<typename T> int SafeVector<T>::isDecodeing(){
@@ -99,6 +104,11 @@ template<typename T> int SafeVector<T>::isDecodeing(){
 template<typename T> void SafeVector<T>::setTag(char* tag){
     TAG = tag;
 }
+
+template<typename T> void SafeVector<T>::printSize(){
+    FFlog("%s  size is : %d  \n" , TAG, getSize());
+}
+
 
 
 #endif

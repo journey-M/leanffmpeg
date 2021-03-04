@@ -4,6 +4,7 @@
 #include "InputFile.h"
 #include "VideoState.h"
 #include "SafeVector.h"
+#include "Clock.h"
 #include <cstdint>
 #include <vector>
 #include <thread>
@@ -38,7 +39,7 @@ struct FrameImage {
 };
 
 //本地保存的
-struct Frame{
+struct DiaplayBufferFrame{
     AVFrame *srcFrame;
     int width ;
     int height;
@@ -59,6 +60,8 @@ struct AudioBufferFrame{
     double pts;
     double duration;
     int64_t pos;
+    //?应该是 avpacket中的 serial？
+//    int serial;
 };
 
 class Decoder {
@@ -93,15 +96,15 @@ public :
     pthread_t th_read;
     pthread_t th_decode_video;
     pthread_t th_decode_audio;
-    SafeVector<AVPacket *> videoPacketList;
-    SafeVector<AVPacket *> audioPacketList;
-    #define  MAX_V_DISPLAY_FRAMS  16
-    #define  MIN_V_DISPLAY_FRAMS  8
-    vector<Frame*> video_display_list;
+    SafeVector<AVPacket *> *videoPacketList;
+    SafeVector<AVPacket *> *audioPacketList;
+    #define  MAX_V_DISPLAY_FRAMS  25
+    #define  MIN_V_DISPLAY_FRAMS  16
+    vector<DiaplayBufferFrame*> video_display_list;
 
     //音频解码相关参数
-    #define  MAX_A_DISPLAY_FRAMS  80
-    #define  MIN_A_DISPLAY_FRAMS  30
+    #define  MAX_A_DISPLAY_FRAMS  200
+    #define  MIN_A_DISPLAY_FRAMS  100
     vector<AudioBufferFrame*> audio_display_list;
     //音频上下文
     SwrContext *swr_ctx = NULL;
@@ -142,7 +145,7 @@ public :
 
     int queue_picture(AVFrame *src_frame, double pts, double duration, int64_t pos);
 
-    int pop_picture(Frame **frame);
+    int pop_picture(DiaplayBufferFrame **frame);
 
     int queue_sample(AVFrame *src_frame, double pts, double duration, int64_t pos);
 
@@ -154,8 +157,10 @@ public :
      */
     void preperPlay();
 
-    Frame* getDisplayFrame();
+    DiaplayBufferFrame* getDisplayFrame();
     AudioBufferFrame* getAudioFrame();
+
+    void setDataPreperdCallback(void (*calback)());
 
     /**
      * 视频packet解码相关
@@ -168,6 +173,10 @@ public :
 
 
 private:
+
+    int isNotified = 0;
+    void (*data_preper_calback)() = NULL;
+    void notifyDataPreperd();
 
 
     int rgb2jpg(char *jpg_file, char *pdata, int width, int height);

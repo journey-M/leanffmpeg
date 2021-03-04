@@ -2437,7 +2437,7 @@ static int decode_video(InputStream *ist, AVPacket *pkt, int *got_output, int64_
         if (ist->dec_ctx->width  != decoded_frame->width ||
             ist->dec_ctx->height != decoded_frame->height ||
             ist->dec_ctx->pix_fmt != decoded_frame->format) {
-            av_log(NULL, AV_LOG_DEBUG, "Frame parameters mismatch context %d,%d,%d != %d,%d,%d\n",
+            av_log(NULL, AV_LOG_DEBUG, "DiaplayBufferFrame parameters mismatch context %d,%d,%d != %d,%d,%d\n",
                 decoded_frame->width,
                 decoded_frame->height,
                 decoded_frame->format,
@@ -3404,7 +3404,7 @@ static int init_output_stream_encode(OutputStream *ost)
             enc_ctx->time_base = av_buffersink_get_time_base(ost->filter->filter);
         if (   av_q2d(enc_ctx->time_base) < 0.001 && video_sync_method != VSYNC_PASSTHROUGH
            && (video_sync_method == VSYNC_CFR || video_sync_method == VSYNC_VSCFR || (video_sync_method == VSYNC_AUTO && !(oc->oformat->flags & AVFMT_VARIABLE_FPS)))){
-            av_log(oc, AV_LOG_WARNING, "Frame rate very high for a muxer not efficiently supporting it.\n"
+            av_log(oc, AV_LOG_WARNING, "DiaplayBufferFrame rate very high for a muxer not efficiently supporting it.\n"
                                        "Please consider specifying a lower framerate, a different muxer or -vsync 2\n");
         }
 
