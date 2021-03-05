@@ -127,10 +127,12 @@ static void frame_call_back(AVFrame* avframe){
     0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF);
 
   SDL_Texture* ptmTexture = SDL_CreateTextureFromSurface(render,ptmpSurface);
-	
+
   SDL_RenderClear(render);
   SDL_RenderCopy(render,ptmTexture,NULL, &rect);
   SDL_RenderPresent(render);
+  free(tmpData);
+
 }
 
 

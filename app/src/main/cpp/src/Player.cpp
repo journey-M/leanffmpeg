@@ -20,9 +20,6 @@ static void render_thread_start(void *args) {
     Player *player = static_cast<Player *>(args);
 
     while (!quit) {
-        //休眠1秒
-//        std::this_thread::sleep_for(std::chrono::milliseconds (10));
-
         map<InputFile *, Decoder *>::iterator itor;
         itor = player->decoder_maps.begin();
         while (itor != player->decoder_maps.end()) {
@@ -48,7 +45,7 @@ static void render_thread_start(void *args) {
                 if (player->display_back) {
                     player->display_back(frame->srcFrame);
                 }
-                av_frame_unref(frame->srcFrame);
+                av_frame_free(&frame->srcFrame);
                 free(frame);
             }
             itor++;
@@ -167,7 +164,6 @@ void Player::getAudioBufferData(int *size, uint8_t *data) {
         if (aBuffer != NULL) {
             *size = aBuffer->size;
             memcpy(data, aBuffer->buffer, aBuffer->size);
-            free(aBuffer->buffer);
             free(aBuffer);
             //设置时间时钟
             audioClock->set_clock(aBuffer->pts);

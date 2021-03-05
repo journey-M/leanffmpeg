@@ -29,8 +29,6 @@ private:
 
 public:
 
-    int packet_pending = 0 ;
-
 
     SafeVector(int min, int max);
 
