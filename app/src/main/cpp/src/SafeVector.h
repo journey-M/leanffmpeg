@@ -106,7 +106,7 @@ template<typename T> void SafeVector<T>::setTag(char* tag){
 }
 
 template<typename T> void SafeVector<T>::printSize(){
-    FFlog("%s  size is : %d  \n" , TAG, getSize());
+//    FFlog("%s  size is : %d  \n" , TAG, getSize());
 }
 
 

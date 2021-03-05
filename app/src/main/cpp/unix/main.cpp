@@ -181,7 +181,7 @@ static void fill_audio_buffer(void *userdata, Uint8 * stream, int len){
     Player *player = shPlayer.get();
     int size = 0;
       player->getAudioBufferData(&size, audioTmpData);
-      FFlog("got audo size = %d \n", size);
+//      FFlog("got audo size = %d \n", size);
       if(size > 0){
       len = len > size ? size: len;
       SDL_MixAudio(stream,audioTmpData ,len, SDL_MIX_MAXVOLUME);

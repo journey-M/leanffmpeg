@@ -53,25 +53,6 @@ static void render_thread_start(void *args) {
             }
             itor++;
         }
-
-
-        //播放声音
-//        std::this_thread::sleep_for(std::chrono::milliseconds(5));
-//        map<InputFile *, Decoder *>::iterator itor;
-//        itor = player->decoder_maps.begin();
-//        while (itor != player->decoder_maps.end()) {
-//            AudioBufferFrame *aBuffer = itor->second->getAudioFrame();
-//            if (aBuffer != NULL) {
-//                //显示到屏幕上
-//                if (player->audio_callback) {
-//                    player->audio_callback(aBuffer->buffer, aBuffer->size);
-//                }
-//
-//            }
-//            itor++;
-//        }
-
-
     }
 }
 
@@ -102,7 +83,6 @@ static void voice_player(void *args) {
 
 Player::Player() {
 
-    int s_queue = 0;
     audioClock = new Clock();
     audioClock->init_clock();
     videoClock = new Clock();
@@ -163,7 +143,6 @@ void Player::preper(void (*display_callback)(AVFrame *frams),
         itor++;
     }
 }
-
 
 
 int Player::play() {

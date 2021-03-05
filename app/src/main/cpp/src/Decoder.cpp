@@ -443,7 +443,7 @@ void Decoder::scalAndSaveFrame(AVFrame *avframe, double playTime) {
 }
 
 
-vector <string> Decoder::createVideoThumbs() {
+vector<string> Decoder::createVideoThumbs() {
     v_path_results.clear();
     AVPacket avPacket;
     int ret = -1;
@@ -558,7 +558,7 @@ int Decoder::queue_sample(AVFrame *src_frame, double pts, double duration, int64
     //输出的声道布局
     uint64_t out_ch_layout = AV_CH_LAYOUT_MONO;
     //输出的声道数
-    uint64_t out_chanels = 1;
+    int out_chanels = av_get_channel_layout_nb_channels(out_ch_layout);
     //输出的采样格式
     enum AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
 
@@ -582,29 +582,32 @@ int Decoder::queue_sample(AVFrame *src_frame, double pts, double duration, int64
         swr_init(swr_ctx);
     }
 
-    AudioBufferFrame *audioBuffer = static_cast<AudioBufferFrame *>(malloc(
-            sizeof(struct AudioBufferFrame)));
-
-    int origin_size = av_samples_get_buffer_size(NULL, aCodecCtx->channel_layout,
-                                               src_frame->nb_samples,
-                                                 aCodecCtx->sample_fmt, 1);
     int data_size = av_samples_get_buffer_size(NULL, out_chanels,
                                                src_frame->nb_samples,
                                                out_sample_fmt, 1);
-    FFlog("audio : origin data size: %d  after  data size : %d  \n", origin_size, data_size);
-
     uint8_t *out_buffer = (uint8_t *) malloc(data_size);
-    swr_convert(swr_ctx, &out_buffer, src_frame->nb_samples, (const uint8_t**)src_frame->extended_data,
-                src_frame->nb_samples);
+    int number = swr_convert(swr_ctx, &out_buffer, src_frame->nb_samples,
+                             (const uint8_t **) src_frame->extended_data,
+                             src_frame->nb_samples);
+    int real_buffer_size = av_samples_get_buffer_size(NULL,
+                                                      out_chanels, number, out_sample_fmt, 1);
+//    FFlog("audio :  after  data size : %d   out_chanels : %d   \n", real_buffer_size, out_chanels);
+    if (number < 0) {
+        free(out_buffer);
+        return -1;
+    }
+
+    AudioBufferFrame *audioBuffer = static_cast<AudioBufferFrame *>(malloc(
+            sizeof(struct AudioBufferFrame)));
     audioBuffer->buffer = out_buffer;
-    audioBuffer->size = data_size;
+    audioBuffer->size = real_buffer_size;
     audioBuffer->format = src_frame->format;
     audioBuffer->pts = pts;
     audioBuffer->duration = duration;
     audioBuffer->pos = pos;
 
     if (f) {
-        fwrite(out_buffer, 1, data_size, f);
+        fwrite(out_buffer, 1, number * 2, f);
     }
 
     //释放原有的AvFrame
@@ -626,7 +629,7 @@ int Decoder::pop_sample(AudioBufferFrame **frame) {
         pthread_mutex_unlock(&mutex_audio_frame_list);
     }
     if (audio_display_list.size() == 0) {
-        FFlog("AudioPlayerCallback -- display audio size:  %d \n", 0);
+//        FFlog("AudioPlayerCallback -- display audio size:  %d \n", 0);
         return 0;
     }
     pthread_mutex_lock(&mutex_audio_frame_list);
@@ -663,9 +666,9 @@ int Decoder::decoder_decode_frame(AVFrame *frame, AVCodec *codec, AVCodecContext
                     case AVMEDIA_TYPE_AUDIO:
                         ret = avcodec_receive_frame(codecCtx, frame);
                         if (ret >= 0) {
-                            AVRational tb = (AVRational){1, frame->sample_rate};
-                            if (frame->pts != AV_NOPTS_VALUE)
-                                frame->pts = av_rescale_q(frame->pts, aCodecCtx->pkt_timebase, tb);
+                            AVRational tb = (AVRational) {1, frame->sample_rate};
+//                            if (frame->pts != AV_NOPTS_VALUE)
+//                                frame->pts = av_rescale_q(frame->pts, aCodecCtx->pkt_timebase, tb);
 //                            else if (d->next_pts != AV_NOPTS_VALUE)
 //                                frame->pts = av_rescale_q(d->next_pts, d->next_pts_tb, tb);
 //                            if (frame->pts != AV_NOPTS_VALUE) {
@@ -734,7 +737,8 @@ int Decoder::decoder_decode_frame(AVFrame *frame, AVCodec *codec, AVCodecContext
 //                }
 //            } else {
             if (avcodec_send_packet(codecCtx, pkt) == AVERROR(EAGAIN)) {
-                FFlog("Receive_frame and send_packet both returned EAGAIN, which is an API violation.\n",AV_LOG_ERROR);
+                FFlog("Receive_frame and send_packet both returned EAGAIN, which is an API violation.\n",
+                      AV_LOG_ERROR);
 //                queue->packet_pending = 1;
 //                av_packet_move_ref(&d->pkt, &pkt);
             }
@@ -1017,6 +1021,7 @@ static void th_decode_audio_packet(void *argv) {
             int64_t pos = frame->pkt_pos;
 //            af->serial = is->auddec.pkt_serial;
             double duration = av_q2d((AVRational) {frame->nb_samples, frame->sample_rate});
+//            FFlog("pts::   %lf  ,  pos :: %d,   duration :  %lf    \n ",pts, pos, duration);
             decoder->queue_sample(frame, pts, duration, pos);
 
 #if CONFIG_AVFILTER
