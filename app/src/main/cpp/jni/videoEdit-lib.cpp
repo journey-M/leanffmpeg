@@ -279,6 +279,7 @@ static void frame_call_back(AVFrame *avframe) {
         //unlock
         ANativeWindow_unlockAndPost(nativeWindow);
     }
+    free(frameImage);
 }
 
 /**

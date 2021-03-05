@@ -131,6 +131,10 @@ static void frame_call_back(AVFrame* avframe){
   SDL_RenderClear(render);
   SDL_RenderCopy(render,ptmTexture,NULL, &rect);
   SDL_RenderPresent(render);
+
+  SDL_FreeSurface(ptmpSurface);
+  SDL_DestroyTexture(ptmTexture);
+
   free(tmpData);
 
 }
