@@ -8,9 +8,9 @@
 Decoder::Decoder(InputFile *input) {
 
     av_init_packet(&flush_pkt);
-    videoPacketList = new SafeVector<AVPacket *>(60, 120);
+    videoPacketList = new SafeVector<AVPacket *>(20, 30);
     videoPacketList->setTag("video packet");
-    audioPacketList = new SafeVector<AVPacket *>(80, 120);
+    audioPacketList = new SafeVector<AVPacket *>(40, 60);
     audioPacketList->setTag("audio packet");
     mInputFile = input;
 
@@ -507,6 +507,7 @@ int Decoder::queue_picture(AVFrame *src_frame, double pts, double duration, int6
     vp->duration = duration;
     vp->pos = pos;
     vp->srcFrame = av_frame_alloc();
+    av_frame_unref(vp->srcFrame);
     av_frame_move_ref(vp->srcFrame, src_frame);
 
     pthread_mutex_lock(&mutex_video_frame_list);
@@ -616,7 +617,7 @@ int Decoder::queue_sample(AVFrame *src_frame, double pts, double duration, int64
 
     pthread_mutex_lock(&mutex_audio_frame_list);
     audio_display_list.push_back(audioBuffer);
-    FFlog("showing audio frame size = %d \n", audio_display_list.size());
+//    FFlog("showing audio frame size = %d \n", audio_display_list.size());
     pthread_mutex_unlock(&mutex_audio_frame_list);
     notifyDataPreperd();
     return 0;

@@ -223,7 +223,7 @@ Java_gwj_dev_ffmpeg_videoEdit_VideoAPI_createThumbs(JNIEnv *env, jobject thiz, j
 
 ANativeWindow *nativeWindow = NULL;
 
-static void frame_call_back(AVFrame *avframe) {
+static void frame_call_back(const AVFrame *avframe) {
     int dest_width = avframe->width / 4;
     int dest_height = avframe->height / 4;
     char *tmpData;
@@ -251,6 +251,7 @@ static void frame_call_back(AVFrame *avframe) {
     libyuv::I420ToRGB24(destData, dest_width, destU, dest_width / 2,
                         destV, dest_width / 2, (uint8_t *) tmpData,
                         dest_width * 3, dest_width, dest_height);
+    delete []destData;
 
 #endif
 
@@ -279,6 +280,7 @@ static void frame_call_back(AVFrame *avframe) {
         //unlock
         ANativeWindow_unlockAndPost(nativeWindow);
     }
+    delete []tmpData;
     free(frameImage);
 }
 

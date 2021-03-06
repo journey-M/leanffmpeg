@@ -47,6 +47,8 @@ struct DiaplayBufferFrame{
     double pts;
     double duration;
     int64_t pos;
+
+//    uint8_t buffer;
 };
 
 /**
@@ -103,8 +105,8 @@ public :
     vector<DiaplayBufferFrame*> video_display_list;
 
     //音频解码相关参数
-    #define  MAX_A_DISPLAY_FRAMS  120
-    #define  MIN_A_DISPLAY_FRAMS  80
+    #define  MAX_A_DISPLAY_FRAMS  100
+    #define  MIN_A_DISPLAY_FRAMS  50
     vector<AudioBufferFrame*> audio_display_list;
     //音频上下文
     SwrContext *swr_ctx = NULL;

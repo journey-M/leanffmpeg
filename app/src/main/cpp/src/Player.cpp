@@ -45,6 +45,7 @@ static void render_thread_start(void *args) {
                 if (player->display_back) {
                     player->display_back(frame->srcFrame);
                 }
+                av_frame_unref(frame->srcFrame);
                 av_frame_free(&frame->srcFrame);
                 free(frame);
             }
@@ -128,7 +129,7 @@ void Player::setTimeStart(float start) {
     this->time_start = start;
 }
 
-void Player::preper(void (*display_callback)(AVFrame *frams),
+void Player::preper(void (*display_callback)(const AVFrame *frams),
                     void audio_callback(unsigned char *data, int size)) {
     this->display_back = display_callback;
     this->audio_callback = audio_callback;
@@ -164,6 +165,7 @@ void Player::getAudioBufferData(int *size, uint8_t *data) {
         if (aBuffer != NULL) {
             *size = aBuffer->size;
             memcpy(data, aBuffer->buffer, aBuffer->size);
+            free(aBuffer->buffer);
             free(aBuffer);
             //设置时间时钟
             audioClock->set_clock(aBuffer->pts);
