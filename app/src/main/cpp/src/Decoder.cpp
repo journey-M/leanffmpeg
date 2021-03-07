@@ -222,7 +222,7 @@ int Decoder::initVideoDecoder() {
 //#endif
 
     int soft = 0;
-    if(videoCodec == NULL){
+    if (videoCodec == NULL) {
         videoCodec = avcodec_find_decoder(videoStream->codecpar->codec_id);
         soft = 1;
     }
@@ -231,7 +231,7 @@ int Decoder::initVideoDecoder() {
         return -1;
     }
     vCodecCtx = avcodec_alloc_context3(videoCodec);
-    if(soft){
+    if (soft) {
         vCodecCtx->thread_count = 4;
     }
     if (!vCodecCtx) {
@@ -540,84 +540,130 @@ Decoder::conver_frame_2_picture(const DiaplayBufferFrame *displayBuffer, struct 
 
 #ifdef android
     vp->format = 1;
-
     //unix use RGBA 格式
-    int dest_len = dest_width * dest_height * 3 / 2;
-    // int dst_u_size = dest_width /2* dest_height /2;
+//    int dest_len = dest_width * dest_height * 3 / 2;
+//    // int dst_u_size = dest_width /2* dest_height /2;
+//    uint8_t *const scaledYUVData = new uint8_t[dest_len];
+//    uint8_t *const scaledU = scaledYUVData + dest_width * dest_height;
+//    uint8_t *const scaledV = scaledYUVData + dest_width * dest_height * 5 / 4;
+//    // scale first
+//    libyuv::I420Scale(
+//            src_frame->data[0], src_frame->width,
+//            src_frame->data[2], src_frame->width / 2,
+//            src_frame->data[1], src_frame->width / 2,
+//            src_frame->width, src_frame->height,
+//            scaledYUVData, dest_width,
+//            scaledU, dest_width / 2,
+//            scaledV, dest_width / 2,
+//            dest_width, dest_height,
+//            libyuv::kFilterNone);
+//
+//    vp->buffer_size = av_image_get_buffer_size(AV_PIX_FMT_BGR32, dest_width, dest_height, 1);
+//    vp->buffer = new uint8_t[vp->buffer_size];
+//
+//    libyuv::I420ToARGB(scaledYUVData, dest_width, scaledU, dest_width / 2,
+//                       scaledV, dest_width / 2,
+//                       vp->buffer, dest_width * 4, dest_width, dest_height);
+//    delete[]scaledYUVData;
 
-    uint8_t *const scaledYUVData = new uint8_t[dest_len];
-    uint8_t *const scaledU = scaledYUVData + dest_width * dest_height;
-    uint8_t *const scaledV = scaledYUVData + dest_width * dest_height * 5 / 4;
+    /* create scaling context */
+    sws_ctx = sws_getContext(src_frame->width, src_frame->height,
+                             (AVPixelFormat) src_frame->format,
+                             dest_width, dest_height, AV_PIX_FMT_BGR32,
+                             SWS_FAST_BILINEAR, NULL, NULL, NULL);
+    uint8_t * tmp [4];
 
-    // scale first
-    libyuv::I420Scale(
-            src_frame->data[0], src_frame->width,
-            src_frame->data[2], src_frame->width / 2,
-            src_frame->data[1], src_frame->width / 2,
-            src_frame->width, src_frame->height,
-            scaledYUVData, dest_width,
-            scaledU, dest_width / 2,
-            scaledV, dest_width / 2,
-            dest_width, dest_height,
-            libyuv::kFilterNone);
+    vp->buffer_size = av_image_alloc(tmp, vp->linesizes,
+                                     dest_width, dest_height, AV_PIX_FMT_BGR32, 0);
 
-    vp->buffer_size = av_image_get_buffer_size(AV_PIX_FMT_BGR32, dest_width, dest_height, 1);
-    vp->buffer = new uint8_t[vp->buffer_size];
+    if (vp->buffer_size < 0) {
+//        int ret = sws_scale(sws_ctx, src_frame->data,
+//                            src_frame->linesize, 0, src_frame->height,
+//                            vp->buffer, vp->linesizes);
+//
+//        if (ret > 0) {
+//
+//        }
+        return -1;
+    }
+    /* convert to destination format */
 
-    libyuv::I420ToARGB(scaledYUVData, dest_width, scaledU, dest_width / 2,
-                       scaledV, dest_width / 2,
-                       vp->buffer, dest_width * 4, dest_width, dest_height);
 
-    delete[]scaledYUVData;
 
 #endif
 
 #ifdef unix
     vp->format = 2;
     //unix use RGBA 格式
-    int dest_len = dest_width * dest_height * 3 / 2;
-    // int dst_u_size = dest_width /2* dest_height /2;
+//    int dest_len = dest_width * dest_height * 3 / 2;
+//    // int dst_u_size = dest_width /2* dest_height /2;
+//
+//    uint8_t *const destData = new uint8_t[dest_len];
+//    uint8_t *const destU = destData + dest_width * dest_height;
+//    uint8_t *const destV = destData + dest_width * dest_height * 5 / 4;
+//
+//    // scale first
+//    libyuv::I420Scale(
+//            src_frame->data[0], src_frame->width,
+//            src_frame->data[2],src_frame->width / 2,
+//            src_frame->data[1], src_frame->width / 2,
+//            src_frame->width, src_frame->height,
+//            destData, dest_width,
+//            destU,dest_width / 2,
+//            destV, dest_width / 2,
+//            dest_width, dest_height,
+//            libyuv::kFilterNone);
+//
+//    int destSize = dest_width * dest_height * 3;
+//    uint8_t * const tmpData = new uint8_t[destSize];
+//
+//    libyuv::I420ToRGB24(destData, dest_width, destU, dest_width / 2,
+//                        destV, dest_width / 2, (uint8_t *) tmpData,
+//                        dest_width * 3, dest_width, dest_height);
+//
+//
+//
+//    vp->buffer_size = dest_width * dest_height *4;
+//    vp->buffer = new uint8_t[vp->buffer_size];
+//    for(int i=0 ; i< dest_width*dest_height; i++){
+//      vp->buffer[4*i] = 0xff;
+//      vp->buffer[4*i+1] = *(tmpData+i*3 +2);
+//      vp->buffer[4*i+2] = *(tmpData+i*3 + 1);
+//      vp->buffer[4*i+3] = *(tmpData+ i*3) ;
+//    }
+//
+//    delete [] tmpData;
+//    delete [] destData;
 
-    uint8_t *const destData = new uint8_t[dest_len];
-    uint8_t *const destU = destData + dest_width * dest_height;
-    uint8_t *const destV = destData + dest_width * dest_height * 5 / 4;
+    sws_ctx = sws_getContext(src_frame->width, src_frame->height,
+                             (AVPixelFormat)src_frame->format,
+                             dest_width, dest_height, AV_PIX_FMT_RGBA,
+                             SWS_FAST_BILINEAR, NULL, NULL, NULL);
 
-    // scale first
-    libyuv::I420Scale(
-            src_frame->data[0], src_frame->width,
-            src_frame->data[2],src_frame->width / 2,
-            src_frame->data[1], src_frame->width / 2,
-            src_frame->width, src_frame->height,
-            destData, dest_width,
-            destU,dest_width / 2,
-            destV, dest_width / 2,
-            dest_width, dest_height,
-            libyuv::kFilterNone);
+   vp->buffer_size = av_image_get_buffer_size(AV_PIX_FMT_RGBA, dest_width, dest_height, 1);
+   vp->buffer = new uint8_t[vp->buffer_size];
 
-    int destSize = dest_width * dest_height * 3;
-    uint8_t * const tmpData = new uint8_t[destSize];
+    // vp->buffer_size = av_image_alloc(vp->buffer, vp->linesizes,
+    //                                  dest_width, dest_height, AV_PIX_FMT_RGBA, 1);
 
-    libyuv::I420ToRGB24(destData, dest_width, destU, dest_width / 2,
-                        destV, dest_width / 2, (uint8_t *) tmpData,
-                        dest_width * 3, dest_width, dest_height);
+    uint8_t *data[AV_NUM_DATA_POINTERS] = {0};
+    data[0] = (uint8_t *)vp->buffer;
+    if (vp->buffer_size > 0) {
+        int ret = sws_scale(sws_ctx, src_frame->data,
+                            src_frame->linesize, 0, 
+                            src_frame->height,
+                            data, vp->linesizes);
 
+        if (ret > 0) {
 
-
-    vp->buffer_size = dest_width * dest_height *4;
-    vp->buffer = new uint8_t[vp->buffer_size];
-    for(int i=0 ; i< dest_width*dest_height; i++){
-      vp->buffer[4*i] = 0xff;
-      vp->buffer[4*i+1] = *(tmpData+i*3 +2);
-      vp->buffer[4*i+2] = *(tmpData+i*3 + 1);
-      vp->buffer[4*i+3] = *(tmpData+ i*3) ;
+        }
+        return -1;
     }
-
-    delete [] tmpData;
-    delete [] destData;
 
 #endif
 
 
+    sws_freeContext(sws_ctx);
     return 0;
 }
 

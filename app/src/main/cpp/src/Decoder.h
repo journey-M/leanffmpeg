@@ -18,6 +18,7 @@ extern "C" {
 #include <libswresample/swresample.h>
 #include <libavutil/avutil.h>
 #include <libavutil/imgutils.h>
+#include <libswscale/swscale.h>
 
 #ifdef unix
 #include <jpeglib.h>
@@ -148,6 +149,10 @@ public :
 
     //视频状态
     VideoState *videoState = NULL;
+
+    //图像缩放
+    struct SwsContext *sws_ctx = NULL;
+
 
 
     Decoder(InputFile *inputFile);
