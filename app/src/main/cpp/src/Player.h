@@ -27,7 +27,7 @@ struct PlayCallback {
 
 class Player {
 public:
-    void (*display_back)(const AVFrame* frames) = NULL;
+    void (*display_back)(int width, int heigth ,int format,int buffer_size, const uint8_t *buffer) = NULL;
     void (* audio_callback)(unsigned char *, int size) = NULL;
     //视频的时钟
     Clock *audioClock;
@@ -63,22 +63,19 @@ public:
 
     void seekTimeLine();
 
-    void preper(void (*display_callback)(const AVFrame* frams), void (* audio_callback)(unsigned char *, int size));
+    void preper(void (*display_callback)(int width, int heigth ,int format,int buffer_size, const uint8_t *buffer),
+            void (* audio_callback)(unsigned char *, int size));
 
     void getAudioBufferData(int* size, uint8_t *data);
 
     double vp_duration(double last_pts, DiaplayBufferFrame *nextvp);
 
-    double compute_target_delay(double delay);
+    double compute_target_delay();
 
 
 
 
 private:
-
-    float time_start = 0.0f;
-
-    void *readPacketTh(void *arg);
 
 };
 

@@ -1,106 +1,112 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context="gwj.dev.ffmpeg.MainActivity">
+    android:layout_height="match_parent">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="16dp"
-        android:orientation="vertical">
+        tools:context="gwj.dev.ffmpeg.MainActivity">
 
-        <TextView
-            android:id="@+id/sample_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Hello World!"
-            android:layout_gravity="center"/>
-
-
-        <Button
-            android:id="@+id/sample_change_format"
-            android:layout_marginTop="8dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="转换为YUV格式"
-            android:layout_gravity="center" />
-
-        <Button
-          android:id="@+id/sample_play_ingles"
-          android:layout_marginTop="8dp"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="gles播放"
-          android:layout_gravity="center" />
-
-        <Button
-            android:id="@+id/sample_play"
-            android:layout_marginTop="8dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="播放视频"
-            android:layout_gravity="center" />
-
-
-        <Button
-            android:id="@+id/sample_play_c_thread"
-            android:layout_marginTop="8dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="播放视频(c thread)"
-            android:layout_gravity="center"/>
-
-        <Button
-            android:id="@+id/sample_play_audio"
-            android:layout_marginTop="8dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="播放音频"
-            android:layout_gravity="center" />
-
-        <Button
-          android:id="@+id/sample_push"
-          android:layout_marginTop="8dp"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="推送流"
-          android:layout_gravity="center" />
-        <Button
-          android:id="@+id/sample_cut_video"
-          android:layout_marginTop="8dp"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="切割视频"
-          android:layout_gravity="center" />
-
-        <Button
-          android:id="@+id/sample_edit_video"
-          android:layout_marginTop="8dp"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="编辑视频"
-          android:layout_gravity="center" />
-
-        <Button
-          android:id="@+id/sample_touch_view"
-          android:layout_marginTop="8dp"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="触摸view"
-          android:layout_gravity="center" />
-
-
-        <SurfaceView
-            android:id="@+id/surface_view"
-            android:layout_marginTop="26dp"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="250dp" />
+            android:layout_height="match_parent"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/sample_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Hello World!" />
+
+
+            <Button
+                android:id="@+id/sample_change_format"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:text="转换为YUV格式" />
+
+            <Button
+                android:id="@+id/sample_play_ingles"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:text="gles播放" />
+
+            <Button
+                android:id="@+id/sample_play"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:text="播放视频" />
+
+
+            <Button
+                android:id="@+id/sample_play_c_thread"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:text="播放视频(c thread)" />
+
+            <Button
+                android:id="@+id/sample_play_audio"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:text="播放音频" />
+
+            <Button
+                android:id="@+id/sample_push"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:text="推送流" />
+
+            <Button
+                android:id="@+id/sample_cut_video"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:text="切割视频" />
+
+            <Button
+                android:id="@+id/sample_edit_video"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:text="编辑视频" />
+
+            <Button
+                android:id="@+id/sample_touch_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:text="触摸view" />
+
+
+            <SurfaceView
+                android:id="@+id/surface_view"
+                android:layout_width="match_parent"
+                android:layout_height="250dp"
+                android:layout_marginTop="26dp" />
+
+
+        </LinearLayout>
 
 
     </LinearLayout>
-
-
-</LinearLayout>
+</ScrollView>

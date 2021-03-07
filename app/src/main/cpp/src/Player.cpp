@@ -11,8 +11,6 @@ static int quit = 0;
 #define AV_SYNC_FRAMEDUP_THRESHOLD 0.1
 
 
-double last_video_pts = 0;
-double last_duration = 0;
 
 static void render_thread_start(void *args) {
 
@@ -23,61 +21,35 @@ static void render_thread_start(void *args) {
         map<InputFile *, Decoder *>::iterator itor;
         itor = player->decoder_maps.begin();
         while (itor != player->decoder_maps.end()) {
-            DiaplayBufferFrame *frame = itor->second->getDisplayFrame();
-            if (frame != NULL) {
-                player->videoClock->set_clock(frame->pts);
+            DisplayImage *displayImage = itor->second->getDisplayImage();
+            if (displayImage != NULL) {
+                player->videoClock->set_clock(displayImage->pts);
                 //此处计算delay的时间
 
                 double delay = 0;
-                last_duration = player->vp_duration(last_video_pts, frame);
-                delay = player->compute_target_delay(last_duration);
-//                FFlog("delay ----- %lf \n ", delay);
+                delay = player->compute_target_delay();
+//                FFlog("video pts %lf,  audio pts %lf ,  delay ----- %lf \n ",
+//                        player->videoClock->get_clock(),
+//                        player->audioClock->get_clock(),delay);
 
-                last_video_pts = frame->pts;
-                last_duration = frame->duration;
                 if (delay > 0) {
                     int  value = delay * 1000000;
-//                    FFlog("sleep ----- %d \n ", value);
+                    FFlog("sleep ----- %d \n ", value);
                     av_usleep(value);
                 }
 
                 //显示到屏幕上
                 if (player->display_back) {
-                    player->display_back(frame->srcFrame);
+                    player->display_back(displayImage->width, displayImage->height, displayImage->format, displayImage->buffer_size, displayImage->buffer);
                 }
-                av_frame_unref(frame->srcFrame);
-                av_frame_free(&frame->srcFrame);
-                free(frame);
+                delete []displayImage->buffer;
+                free(displayImage);
             }
             itor++;
         }
     }
 }
 
-static void voice_player(void *args) {
-    FFlog("render_thread_start ... audio");
-    Player *player = static_cast<Player *>(args);
-    while (!quit) {
-        //休眠1秒
-//        std::this_thread::sleep_for(std::chrono::milliseconds (25));
-        map<InputFile *, Decoder *>::iterator itor;
-        itor = player->decoder_maps.begin();
-        while (itor != player->decoder_maps.end()) {
-            //播放音频数据
-            AudioBufferFrame *aBuffer = itor->second->getAudioFrame();
-            if (aBuffer != NULL) {
-                //显示到屏幕上
-                if (player->audio_callback) {
-                    player->audio_callback(aBuffer->buffer, aBuffer->size);
-                }
-                free(aBuffer->buffer);
-                free(aBuffer);
-            }
-            itor++;
-        }
-
-    }
-}
 
 Player::Player() {
 
@@ -126,10 +98,10 @@ void Player::setCallback(PlayCallback *scallback) {
 }
 
 void Player::setTimeStart(float start) {
-    this->time_start = start;
+//    this->time_start = start;
 }
 
-void Player::preper(void (*display_callback)(const AVFrame *frams),
+void Player::preper(void (*display_callback)(int width, int heigth ,int format, int buffer_size, const uint8_t *buffer),
                     void audio_callback(unsigned char *data, int size)) {
     this->display_back = display_callback;
     this->audio_callback = audio_callback;
@@ -164,7 +136,9 @@ void Player::getAudioBufferData(int *size, uint8_t *data) {
         AudioBufferFrame *aBuffer = itor->second->getAudioFrame();
         if (aBuffer != NULL) {
             *size = aBuffer->size;
-            memcpy(data, aBuffer->buffer, aBuffer->size);
+            if(*size > 0){
+                memcpy(data, aBuffer->buffer, aBuffer->size);
+            }
             free(aBuffer->buffer);
             free(aBuffer);
             //设置时间时钟
@@ -186,7 +160,7 @@ double Player::vp_duration(double last_video_pts, DiaplayBufferFrame *nextvp) {
 }
 
 
-double Player::compute_target_delay(double delay) {
+double Player::compute_target_delay() {
     double sync_threshold, diff = 0;
 
     //非主时钟
@@ -199,20 +173,19 @@ double Player::compute_target_delay(double delay) {
     /* skip or repeat frame. We take into account the
        delay to compute the threshold. I still don't know
        if it is the best guess */
-    sync_threshold = FFMAX(AV_SYNC_THRESHOLD_MIN, FFMIN(AV_SYNC_THRESHOLD_MAX, delay));
-    if (!isnan(diff) && fabs(diff) < max_frame_duration) {
-        if (diff <= -sync_threshold)
-            delay = FFMAX(0, delay + diff);
-        else if (diff >= sync_threshold && delay > AV_SYNC_FRAMEDUP_THRESHOLD)
-            delay = delay + diff;
-        else if (diff >= sync_threshold)
-            delay = 2 * delay;
-    }
+//    sync_threshold = FFMAX(AV_SYNC_THRESHOLD_MIN, FFMIN(AV_SYNC_THRESHOLD_MAX, delay));
+//    if (!isnan(diff) && fabs(diff) < max_frame_duration) {
+//        if (diff <= -sync_threshold)
+//            delay = FFMAX(0, delay + diff);
+//        else if (diff >= sync_threshold && delay > AV_SYNC_FRAMEDUP_THRESHOLD)
+//            delay = delay + diff;
+//        else if (diff >= sync_threshold)
+//            delay = 2 * delay;
+//    }
 
-    av_log(NULL, AV_LOG_TRACE, "video: delay=%0.3f A-V=%f\n",
-           delay, -diff);
+//    FFlog( "video: delay=%0.3f A-V=%f\n",delay, -diff);
 
-    return delay;
+    return diff;
 }
 
 

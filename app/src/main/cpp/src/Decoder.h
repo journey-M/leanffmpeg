@@ -17,6 +17,7 @@ extern "C" {
 #include <libavutil/error.h>
 #include <libswresample/swresample.h>
 #include <libavutil/avutil.h>
+#include <libavutil/imgutils.h>
 
 #ifdef unix
 #include <jpeglib.h>
@@ -41,14 +42,24 @@ struct FrameImage {
 //本地保存的
 struct DiaplayBufferFrame{
     AVFrame *srcFrame;
-    int width ;
-    int height;
-    int format;
     double pts;
     double duration;
     int64_t pos;
 
-//    uint8_t buffer;
+};
+
+struct DisplayImage{
+//    1 android argb888
+//    2 unix
+    int width ;
+    int height;
+    int format;
+    int linesizes[4];
+    uint8_t *buffer;
+    int buffer_size;
+    double pts;
+    double duration;
+    int64_t pos;
 };
 
 /**
@@ -78,10 +89,10 @@ public :
     /**
      * 解码相关变量
      */
-    AVCodec *videoCodec;
-    AVCodec *audioCodec;
-    AVCodecContext *vCodecCtx;
-    AVCodecContext *aCodecCtx;
+    AVCodec *videoCodec = NULL;
+    AVCodec *audioCodec = NULL;
+    AVCodecContext *vCodecCtx = NULL;
+    AVCodecContext *aCodecCtx = NULL;
 
     /**
      * 缩略图相关变量
@@ -114,6 +125,15 @@ public :
     //read线程锁
     pthread_mutex_t mutex_read_th = PTHREAD_MUTEX_INITIALIZER;
     pthread_cond_t cond_read_th = PTHREAD_COND_INITIALIZER;
+
+    //decode audio 线程锁
+    pthread_mutex_t mutex_decode_audio_th = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t cond_decode_audio_th = PTHREAD_COND_INITIALIZER;
+
+    //decode video 线程锁
+    pthread_mutex_t mutex_decode_video_th = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t cond_decode_video_th = PTHREAD_COND_INITIALIZER;
+
 
     //缓存Video Frame写入锁
     pthread_mutex_t mutex_video_frame_list = PTHREAD_MUTEX_INITIALIZER;
@@ -149,6 +169,8 @@ public :
 
     int pop_picture(DiaplayBufferFrame **frame);
 
+    int conver_frame_2_picture(const DiaplayBufferFrame *buffer, struct DisplayImage * destImage);
+
     int queue_sample(AVFrame *src_frame, double pts, double duration, int64_t pos);
 
     int pop_sample(AudioBufferFrame **frame);
@@ -159,7 +181,7 @@ public :
      */
     void preperPlay();
 
-    DiaplayBufferFrame* getDisplayFrame();
+    DisplayImage* getDisplayImage();
     AudioBufferFrame* getAudioFrame();
 
     void setDataPreperdCallback(void (*calback)());

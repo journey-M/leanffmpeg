@@ -17,6 +17,7 @@ extern "C" {
 #include "libswscale/swscale.h"
 #include "libswresample/swresample.h"
 #include "libavutil/imgutils.h"
+#include "libavcodec/jni.h"
 }
 
 Decoder *decoder;
@@ -36,6 +37,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
         return -1;
     }
     result = JNI_VERSION_1_4;
+    av_jni_set_java_vm(vm, NULL);
     return result;
 }
 
@@ -223,65 +225,19 @@ Java_gwj_dev_ffmpeg_videoEdit_VideoAPI_createThumbs(JNIEnv *env, jobject thiz, j
 
 ANativeWindow *nativeWindow = NULL;
 
-static void frame_call_back(const AVFrame *avframe) {
-    int dest_width = avframe->width / 4;
-    int dest_height = avframe->height / 4;
-    char *tmpData;
-#ifdef android
+static void frame_call_back(int width, int height, int format, int buffer_size,const uint8_t *bufer) {
 
-    //unix use RGB565  格式
-    int dest_len = dest_width * dest_height * 3 / 2;
-    // int dst_u_size = dest_width /2* dest_height /2;
-
-    uint8_t *destData = new uint8_t[dest_len];
-    uint8_t *destU = destData + dest_width * dest_height;
-    uint8_t *destV = destData + dest_width * dest_height * 5 / 4;
-
-    // scale first
-    libyuv::I420Scale(
-            avframe->data[0], avframe->width, avframe->data[2],
-            avframe->width / 2, avframe->data[1], avframe->width / 2,
-            avframe->width, avframe->height, destData, dest_width, destU,
-            dest_width / 2, destV, dest_width / 2, dest_width, dest_height,
-            libyuv::kFilterNone);
-
-    int destSize = dest_width * dest_height * 3;
-    tmpData = new char[destSize];
-
-    libyuv::I420ToRGB24(destData, dest_width, destU, dest_width / 2,
-                        destV, dest_width / 2, (uint8_t *) tmpData,
-                        dest_width * 3, dest_width, dest_height);
-    delete []destData;
-
-#endif
-
-    FrameImage *frameImage = (FrameImage *) malloc(sizeof(struct FrameImage));
-    frameImage->width = dest_width;
-    frameImage->height = dest_height;
-    frameImage->buffer = tmpData;
-
-    ANativeWindow_setBuffersGeometry(nativeWindow, frameImage->width,
-                                     frameImage->height, WINDOW_FORMAT_RGBA_8888);
+//    FFlog("imgae  width : %d, image height : %d ", width, height);
+    ANativeWindow_setBuffersGeometry(nativeWindow, width,
+                                     height, WINDOW_FORMAT_RGBA_8888);
     ANativeWindow_Buffer outBuffer;
     int ret = ANativeWindow_lock(nativeWindow, &outBuffer, 0);
     if (ret == 0) {
-
-        uint8_t *dst_data = static_cast<uint8_t *>(outBuffer.bits);
-
-
-        //单个像素拷贝。
-        for (int i = 0; i < frameImage->width * frameImage->height; i++) {
-            dst_data[i * 4] = frameImage->buffer[i * 3];
-            dst_data[i * 4 + 1] = frameImage->buffer[i * 3 + 1];
-            dst_data[i * 4 + 2] = frameImage->buffer[i * 3 + 2];
-            dst_data[i * 4 + 3] = 0xff;
-        }
-
-        //unlock
+        memcpy(outBuffer.bits, bufer, buffer_size);
         ANativeWindow_unlockAndPost(nativeWindow);
+        //unlock
     }
-    delete []tmpData;
-    free(frameImage);
+
 }
 
 /**
@@ -426,7 +382,7 @@ static void AudioPlayerCallback(SLAndroidSimpleBufferQueueItf bufferQueueItf, vo
         uint8_t *buffer = new uint8_t[BUFFER_SIZE];
         player->getAudioBufferData(&size, buffer);
 
-        FFlog("AudioPlayerCallback -- buffer size:  %d \n", size);
+//        FFlog("AudioPlayerCallback -- buffer size:  %d \n", size);
 
         if(size > 0){
             (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);

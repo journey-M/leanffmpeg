@@ -87,12 +87,12 @@ template<typename T> int SafeVector<T>::getSize(){
 }
 
 template<typename T> int SafeVector<T>::enough(){
-    return getSize() > max_number;
+    return getSize() > max_number? 1: 0;
 }
 
 
 template<typename T> int SafeVector<T>::not_enough(){
-    return getSize() < min_number;
+    return getSize() < min_number ? 1: 0;
 }
 
 template<typename T> int SafeVector<T>::isDecodeing(){

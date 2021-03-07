@@ -19,6 +19,7 @@ echo "Compiling FFmpeg for $CPU"
     --enable-jni \
     --enable-mediacodec \
     --enable-decoder=h264_mediacodec \
+    --enable-hwaccel=h264_mediacodec \
     --disable-static \
     --disable-doc \
     --enable-ffmpeg \

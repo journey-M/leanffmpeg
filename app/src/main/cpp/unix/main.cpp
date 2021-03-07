@@ -77,56 +77,56 @@ static int seekImageFrame(Decoder *decoder){
   return 0;
 }
 
-static void frame_call_back(const AVFrame* avframe){
+static void frame_call_back(int width, int heigth, int format,int buffer_size, const uint8_t * buffer){
 
 
-  int dest_width = avframe->width / 4;
-  int dest_height = avframe->height / 4;
+  // int dest_width = avframe->width / 4;
+  // int dest_height = avframe->height / 4;
 
-  //unix use RGBA 格式
-  int dest_len = dest_width * dest_height * 3 / 2;
-  // int dst_u_size = dest_width /2* dest_height /2;
+  // //unix use RGBA 格式
+  // int dest_len = dest_width * dest_height * 3 / 2;
+  // // int dst_u_size = dest_width /2* dest_height /2;
 
-  uint8_t *const destData = new uint8_t[dest_len];
-  uint8_t *const destU = destData + dest_width * dest_height;
-  uint8_t *const destV = destData + dest_width * dest_height * 5 / 4;
+  // uint8_t *const destData = new uint8_t[dest_len];
+  // uint8_t *const destU = destData + dest_width * dest_height;
+  // uint8_t *const destV = destData + dest_width * dest_height * 5 / 4;
 
-  // scale first
-  libyuv::I420Scale(
-          avframe->data[0], avframe->width,
-          avframe->data[2],avframe->width / 2,
-          avframe->data[1], avframe->width / 2,
-          avframe->width, avframe->height,
-          destData, dest_width,
-          destU,dest_width / 2,
-          destV, dest_width / 2,
-          dest_width, dest_height,
-          libyuv::kFilterNone);
+  // // scale first
+  // libyuv::I420Scale(
+  //         avframe->data[0], avframe->width,
+  //         avframe->data[2],avframe->width / 2,
+  //         avframe->data[1], avframe->width / 2,
+  //         avframe->width, avframe->height,
+  //         destData, dest_width,
+  //         destU,dest_width / 2,
+  //         destV, dest_width / 2,
+  //         dest_width, dest_height,
+  //         libyuv::kFilterNone);
 
-  int destSize = dest_width * dest_height * 3;
-  uint8_t * const tmpData = new uint8_t[destSize];
+  // int destSize = dest_width * dest_height * 3;
+  // uint8_t * const tmpData = new uint8_t[destSize];
 
-  libyuv::I420ToRGB24(destData, dest_width, destU, dest_width / 2,
-                      destV, dest_width / 2, (uint8_t *) tmpData,
-                      dest_width * 3, dest_width, dest_height);
+  // libyuv::I420ToRGB24(destData, dest_width, destU, dest_width / 2,
+  //                     destV, dest_width / 2, (uint8_t *) tmpData,
+  //                     dest_width * 3, dest_width, dest_height);
 
 
 
   SDL_Rect rect ;
   rect.x = 0;
   rect.y = 0;
-  rect.w = dest_width;
-  rect.h = dest_height;
+  rect.w = width;
+  rect.h = heigth;
 
-  char* const showData = new char[dest_width * dest_height *4];
-  for(int i=0 ; i< dest_width*dest_height; i++){
-    showData[4*i] = 0xff;
-    showData[4*i+1] = *(tmpData+i*3 +2);
-    showData[4*i+2] = *(tmpData+i*3 + 1);
-    showData[4*i+3] = *(tmpData+ i*3) ;
-  }
+  // char* const showData = new char[dest_width * dest_height *4];
+  // for(int i=0 ; i< dest_width*dest_height; i++){
+  //   showData[4*i] = 0xff;
+  //   showData[4*i+1] = *(tmpData+i*3 +2);
+  //   showData[4*i+2] = *(tmpData+i*3 + 1);
+  //   showData[4*i+3] = *(tmpData+ i*3) ;
+  // }
 
-  SDL_Surface *ptmpSurface = SDL_CreateRGBSurfaceFrom(showData,dest_width, dest_height,4*8, dest_width* 4,
+  SDL_Surface *ptmpSurface = SDL_CreateRGBSurfaceFrom((void *)buffer,width, heigth,4*8, width* 4,
     0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF);
 
   SDL_Texture* ptmTexture = SDL_CreateTextureFromSurface(render,ptmpSurface);
@@ -138,9 +138,9 @@ static void frame_call_back(const AVFrame* avframe){
   SDL_FreeSurface(ptmpSurface);
   SDL_DestroyTexture(ptmTexture);
 
-  delete []tmpData;
-  delete []showData;
-  delete []destData;
+  // delete []tmpData;
+  // delete []showData;
+  // delete []destData;
 
 }
 
@@ -297,7 +297,7 @@ int main (int argc, char* argv[]){
 //     SDL_Delay(1);
 //   }
 
-   sleep(20);
+   sleep(25);
 	 SDL_DestroyRenderer(render);
 	 SDL_DestroyWindow(window);
 
