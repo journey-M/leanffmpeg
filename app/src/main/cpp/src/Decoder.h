@@ -52,12 +52,16 @@ struct DiaplayBufferFrame{
 struct DisplayImage{
 //    1 android argb888
 //    2 unix
+
+
     int width ;
     int height;
     int format;
-    int linesizes[4];
-    uint8_t *buffer;
-    int buffer_size;
+     int buffer_size;
+    //    uint8_t *buffer;
+    // int linesizes[4];
+    uint8_t *dst_data[AV_NUM_DATA_POINTERS] = {0};
+    int dst_linesize[4];
     double pts;
     double duration;
     int64_t pos;

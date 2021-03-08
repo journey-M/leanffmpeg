@@ -6,12 +6,14 @@
 double Clock::get_clock() {
 //    if (*this->queue_serial != serial)
 //        return NAN;
-    if (paused) {
-        return pts;
-    } else {
-        double time = av_gettime_relative() / 1000000.0;
-        return pts_drift + time - (time - last_updated) * (1.0 - speed);
-    }
+//    if (paused) {
+//        return pts;
+//    } else {
+//        double time = av_gettime_relative() / 1000000.0;
+//        return pts_drift + time - (time - last_updated) * (1.0 - speed);
+//    }
+
+    return pts;
 }
 
 void Clock::set_clock_at(double pts, double time) {

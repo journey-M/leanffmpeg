@@ -2,6 +2,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <libavutil/frame.h>
+#include <libavutil/pixdesc.h>
+#include <libavutil/pixfmt.h>
 #include <string>
 #include "Log.h"
 
@@ -214,12 +216,12 @@ int Decoder::rgb2jpg(char *jpg_file, char *pdata, int width, int height)
 #endif
 
 int Decoder::initVideoDecoder() {
-//#ifdef android
-//    videoCodec = avcodec_find_decoder_by_name("h264_mediacodec");
-//    if (videoCodec == NULL) {
-//        FFlog("找不到硬件解码器 \n");
-//    }
-//#endif
+#ifdef android
+    videoCodec = avcodec_find_decoder_by_name("h264_mediacodec");
+    if (videoCodec == NULL) {
+        FFlog("找不到硬件解码器 \n");
+    }
+#endif
 
     int soft = 0;
     if (videoCodec == NULL) {
@@ -527,6 +529,23 @@ int Decoder::queue_picture(AVFrame *src_frame, double pts, double duration, int6
     return 0;
 }
 
+static AVPixelFormat ConvertDeprecatedFormat(enum AVPixelFormat format)
+{
+    switch (format)
+    {
+    case AV_PIX_FMT_YUVJ420P:
+        return AV_PIX_FMT_YUV420P;
+    case AV_PIX_FMT_YUVJ422P:
+        return AV_PIX_FMT_YUV422P;
+    case AV_PIX_FMT_YUVJ444P:
+        return AV_PIX_FMT_YUV444P;
+    case AV_PIX_FMT_YUVJ440P:
+        return AV_PIX_FMT_YUV440P;
+    default:
+        return format;
+    }
+}
+
 int
 Decoder::conver_frame_2_picture(const DiaplayBufferFrame *displayBuffer, struct DisplayImage *vp) {
     AVFrame *src_frame = displayBuffer->srcFrame;
@@ -568,27 +587,26 @@ Decoder::conver_frame_2_picture(const DiaplayBufferFrame *displayBuffer, struct 
 
     /* create scaling context */
     sws_ctx = sws_getContext(src_frame->width, src_frame->height,
-                             (AVPixelFormat) src_frame->format,
-                             dest_width, dest_height, AV_PIX_FMT_BGR32,
+                             ConvertDeprecatedFormat((AVPixelFormat)src_frame->format),
+                             dest_width, dest_height, AV_PIX_FMT_ARGB,
                              SWS_FAST_BILINEAR, NULL, NULL, NULL);
-    uint8_t * tmp [4];
 
-    vp->buffer_size = av_image_alloc(tmp, vp->linesizes,
-                                     dest_width, dest_height, AV_PIX_FMT_BGR32, 0);
-
-    if (vp->buffer_size < 0) {
-//        int ret = sws_scale(sws_ctx, src_frame->data,
-//                            src_frame->linesize, 0, src_frame->height,
-//                            vp->buffer, vp->linesizes);
-//
-//        if (ret > 0) {
-//
-//        }
-        return -1;
+//    vp->buffer_size = av_image_alloc(vp->dst_data, vp->dst_linesize,dest_width, dest_height, AV_PIX_FMT_BGR32, 0);
+    int ret = ret = av_image_alloc(vp->dst_data, vp->dst_linesize,
+                                   dest_width, dest_height, AV_PIX_FMT_ARGB, 1);
+    if (ret < 0) {
+        FFlog("Could not allocate source image\n");
     }
-    /* convert to destination format */
+    vp->buffer_size = dest_width *dest_height * 4;
 
+    ret = sws_scale(sws_ctx, src_frame->data,
+                    src_frame->linesize, 0,
+                    src_frame->height,
+                    vp->dst_data, vp->dst_linesize);
 
+    if (ret > 0) {
+//        FFlog("sws_scale  success !");
+    }
 
 #endif
 
@@ -636,35 +654,40 @@ Decoder::conver_frame_2_picture(const DiaplayBufferFrame *displayBuffer, struct 
 //    delete [] destData;
 
     sws_ctx = sws_getContext(src_frame->width, src_frame->height,
-                             (AVPixelFormat)src_frame->format,
-                             dest_width, dest_height, AV_PIX_FMT_RGBA,
+                             ConvertDeprecatedFormat((AVPixelFormat)src_frame->format),
+                             dest_width, dest_height, AV_PIX_FMT_RGB32,
                              SWS_FAST_BILINEAR, NULL, NULL, NULL);
 
-   vp->buffer_size = av_image_get_buffer_size(AV_PIX_FMT_RGBA, dest_width, dest_height, 1);
-   vp->buffer = new uint8_t[vp->buffer_size];
+    int ret = 0;
+    // data[0] = (uint8_t *)vp->buffer;
+    if ((ret = av_image_alloc(vp->dst_data, vp->dst_linesize,
+                              dest_width, dest_height, AV_PIX_FMT_RGB32, 1)) < 0) {
+        FFlog("Could not allocate source image\n");
+    }
+
+    // vp->buffer_size = av_image_get_buffer_size(AV_PIX_FMT_RGB32, dest_width, dest_height, 0);
+//    vp->buffer = new uint8_t[vp->buffer_size];
 
     // vp->buffer_size = av_image_alloc(vp->buffer, vp->linesizes,
     //                                  dest_width, dest_height, AV_PIX_FMT_RGBA, 1);
 
-    uint8_t *data[AV_NUM_DATA_POINTERS] = {0};
-    data[0] = (uint8_t *)vp->buffer;
-    if (vp->buffer_size > 0) {
-        int ret = sws_scale(sws_ctx, src_frame->data,
-                            src_frame->linesize, 0, 
-                            src_frame->height,
-                            data, vp->linesizes);
 
-        if (ret > 0) {
+//    FFlog("原始编码格式是：  %s \n", av_get_pix_fmt_name((AVPixelFormat)src_frame->format));
 
-        }
-        return -1;
+    ret = sws_scale(sws_ctx, src_frame->data,
+                        src_frame->linesize, 0, 
+                        src_frame->height,
+                        vp->dst_data, vp->dst_linesize);
+
+    if (ret > 0) {
+        FFlog("sws_scale  success !");
     }
 
 #endif
 
 
     sws_freeContext(sws_ctx);
-    return 0;
+    return 1;
 }
 
 
@@ -1218,9 +1241,14 @@ DisplayImage *Decoder::getDisplayImage() {
         return NULL;
     }
     DisplayImage *displayImage = static_cast<DisplayImage *>(malloc(sizeof(struct DisplayImage)));
-    conver_frame_2_picture(display, displayImage);
+    ret = conver_frame_2_picture(display, displayImage);
     av_frame_free(&display->srcFrame);
     free(display);
+    if(ret <= 0){
+        av_freep(displayImage->dst_data);
+        free(displayImage);
+        return NULL;
+    }
     return displayImage;
 
 }

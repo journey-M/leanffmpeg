@@ -40,9 +40,10 @@ static void render_thread_start(void *args) {
 
                 //显示到屏幕上
                 if (player->display_back) {
-                    player->display_back(displayImage->width, displayImage->height, displayImage->format, displayImage->buffer_size, displayImage->buffer);
+                    player->display_back(displayImage->width, displayImage->height, displayImage->format, displayImage->buffer_size, &displayImage->dst_data[0][0]);
                 }
-                delete []displayImage->buffer;
+                // delete []displayImage->buffer;
+                av_freep(displayImage->dst_data);
                 free(displayImage);
             }
             itor++;
